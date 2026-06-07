@@ -378,50 +378,17 @@ export function PostPropertyPage() {
             </div>
 
             <div className="p-4 sm:p-5 md:p-6 space-y-2">
-              <label className="block text-sm font-bold text-primary">
-                Residential Types
-              </label>
+           
 
-              <MultiSelect
+              
+              <MultiSelectField
+                label="Select Residential Types"
                 options={residentialOptions}
                 value={selectedResidential}
                 onChange={setSelectedResidential}
-                labelledBy="Select Residential Types"
-                hasSelectAll={false}
-                valueRenderer={(selected) =>
-                  selected.length
-                    ? `${selected.length} selected`
-                    : "Select Residential Types"
-                }
               />
 
-              {/* Chips */}
-              {selectedResidential.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedResidential.map((item) => (
-                    <div
-                      key={item.value}
-                      className="inline-flex items-center gap-1 rounded-full bg-accent-light text-accent px-3 py-1.5 text-xs font-semibold"
-                    >
-                      {item.label}
-
-                      <button
-                        type="button"
-                        className="hover:text-red-500"
-                        onClick={() =>
-                          setSelectedResidential(
-                            selectedResidential.filter(
-                              (x) => x.value !== item.value
-                            )
-                          )
-                        }
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+          
 
               <MultiSelectField
                 label="Commercial Types"
