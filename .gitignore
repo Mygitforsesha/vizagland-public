@@ -21,3 +21,23 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.production.local
+.env.test.local
+
+# Coverage reports
+coverage
+
+# Cache
+.cache
+.eslintcache
+
+# Vite cache
+.vite
+
+# Temporary files
+*.tmp

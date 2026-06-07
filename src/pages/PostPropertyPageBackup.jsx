@@ -2,10 +2,6 @@ import { useState } from 'react';
 import { Building, MapPin, Phone, Send } from 'lucide-react';
 import PropertySuccessModal from '../components/modals/PropertySuccessModal';
 import PropertyLeadModal from '../components/modals/PropertyLeadModal';
-import PropertyGroupSelector from '@/components/post-property/PropertyGroupSelector';
-import { MultiSelect } from "react-multi-select-component";
-import { X } from "lucide-react";
-import MultiSelectField from '@/components/post-property/MultiSelectField';
 
 const approvalOptions = ["Don't know", 'Panchayati', 'GVMC', 'VMRDA', 'DTCP', 'RERA', 'Un Approved'];
 
@@ -25,7 +21,7 @@ const areaUnits = ['Sq.Ft', 'Sq.Yds', 'Sq.Mts', 'Acres', 'Cents', 'Grounds', 'Gu
 const facingOptions = ['East', 'West', 'North', 'South', 'North-East', 'North-West', 'South-East', 'South-West'];
 
 const residentialTypes = [
-  ' Flats', ' Plot', ' House', 'Builder Floor Apartment',
+  'Residential Flats', 'Residential Plot', 'Residential House', 'Builder Floor Apartment',
   'Villas', 'Group House', 'Individual House', 'Pent House', 'Studio Apartment',
 ];
 
@@ -52,24 +48,6 @@ const otherServices = [
   'Link Document', 'GPA Document', 'Veelunama Document', 'FMB', 'LPM',
   'Village Map', 'Adangal', '1B',
 ];
-
-const residentialOptions =
-  residentialTypes.map(x => ({ label: x, value: x }));
-
-const commercialOptions =
-  commercialTypes.map(x => ({ label: x, value: x }));
-
-const developmentOptions =
-  developmentTypes.map(x => ({ label: x, value: x }));
-
-const layoutOptions =
-  layoutTypes.map(x => ({ label: x, value: x }));
-
-const houseDevOptions =
-  houseDevTypes.map(x => ({ label: x, value: x }));
-
-const constructionOptions =
-  constructionTypes.map(x => ({ label: x, value: x }));
 
 export function PostPropertyPage() {
   const [approvedBy, setApprovedBy] = useState([]);
@@ -122,39 +100,6 @@ export function PostPropertyPage() {
     alert('Property submitted successfully!');
   }
 
-  const chipRenderer = (selected, onChange) => {
-    if (!selected.length) return "Select...";
-
-    return (
-      <div className="flex flex-wrap gap-2 py-1">
-        {selected.map((item) => (
-          <div
-            key={item.value}
-            className="inline-flex items-center gap-1 rounded-full bg-accent-light text-accent px-3 py-1 text-xs font-semibold"
-          >
-            <span>{item.label}</span>
-
-            <button
-              type="button"
-              className="ml-1 rounded-full hover:bg-accent/10 p-0.5"
-              onClick={(e) => {
-                e.stopPropagation();
-
-                setSelectedResidential(
-                  selectedResidential.filter(
-                    (selectedItem) => selectedItem.value !== item.value
-                  )
-                );
-              }}
-            >
-              <X size={12} />
-            </button>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   return (
     <>
       {/* Page Header */}
@@ -182,7 +127,7 @@ export function PostPropertyPage() {
         <div className="max-w-5xl mx-auto px-4">
 
           {/* Property Approved By */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
             <div className="bg-primary text-white text-sm font-bold px-5 py-3">Property Approved By</div>
             <div className="p-5">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -345,7 +290,7 @@ export function PostPropertyPage() {
           </div>
 
           {/* Property Group & Types */}
-          {/* <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
             <div className="bg-gray-900 text-white text-sm font-bold px-5 py-3">Property Group & Types</div>
             <div className="p-5 space-y-6">
               <div>
@@ -368,102 +313,10 @@ export function PostPropertyPage() {
               <CheckboxGroup title="House / Villas / Apartment Developers" items={houseDevTypes} selected={selectedHouseDev} onToggle={(v) => toggleCheckbox(v, selectedHouseDev, setSelectedHouseDev)} />
               <CheckboxGroup title="Construction Types" items={constructionTypes} selected={selectedConstruction} onToggle={(v) => toggleCheckbox(v, selectedConstruction, setSelectedConstruction)} />
             </div>
-          </div> */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-
-            <div className="bg-primary px-5 py-5">
-              <h3 className="text-white text-lg font-bold">
-                Property Group & Types
-              </h3>
-            </div>
-
-            <div className="p-4 sm:p-5 md:p-6 space-y-2">
-              <label className="block text-sm font-bold text-primary">
-                Residential Types
-              </label>
-
-              <MultiSelect
-                options={residentialOptions}
-                value={selectedResidential}
-                onChange={setSelectedResidential}
-                labelledBy="Select Residential Types"
-                hasSelectAll={false}
-                valueRenderer={(selected) =>
-                  selected.length
-                    ? `${selected.length} selected`
-                    : "Select Residential Types"
-                }
-              />
-
-              {/* Chips */}
-              {selectedResidential.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {selectedResidential.map((item) => (
-                    <div
-                      key={item.value}
-                      className="inline-flex items-center gap-1 rounded-full bg-accent-light text-accent px-3 py-1.5 text-xs font-semibold"
-                    >
-                      {item.label}
-
-                      <button
-                        type="button"
-                        className="hover:text-red-500"
-                        onClick={() =>
-                          setSelectedResidential(
-                            selectedResidential.filter(
-                              (x) => x.value !== item.value
-                            )
-                          )
-                        }
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <MultiSelectField
-                label="Commercial Types"
-                options={commercialOptions}
-                value={selectedCommercial}
-                onChange={setSelectedCommercial}
-              />
-
-              <MultiSelectField
-                label="Developments"
-                options={developmentOptions}
-                value={selectedDevelopments}
-                onChange={setSelectedDevelopments}
-              />
-
-              <MultiSelectField
-                label="Layout Developers"
-                options={layoutOptions}
-                value={selectedLayout}
-                onChange={setSelectedLayout}
-              />
-
-              <MultiSelectField
-                label="House/Villas Developers"
-                options={houseDevOptions}
-                value={selectedHouseDev}
-                onChange={setSelectedHouseDev}
-              />
-
-              <MultiSelectField
-                label="Construction Types"
-                options={constructionOptions}
-                value={selectedConstruction}
-                onChange={setSelectedConstruction}
-              />
-
-            </div>
-
           </div>
 
           {/* Other Services */}
-          <div className="bg-white border border-gray-200 rounded-xl mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
             <div className="bg-gray-700 text-white text-sm font-bold px-5 py-3">Other Services</div>
             <div className="p-5">
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
