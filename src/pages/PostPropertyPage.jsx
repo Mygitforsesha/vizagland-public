@@ -1,11 +1,25 @@
 import { useState } from 'react';
-import { Building, MapPin, Phone, Send } from 'lucide-react';
+import { Building, Phone, Send } from 'lucide-react';
 import PropertySuccessModal from '../components/modals/PropertySuccessModal';
 import PropertyLeadModal from '../components/modals/PropertyLeadModal';
-import PropertyGroupSelector from '@/components/post-property/PropertyGroupSelector';
-import { MultiSelect } from "react-multi-select-component";
-import { X } from "lucide-react";
-import MultiSelectField from '@/components/post-property/MultiSelectField';
+import FormSection from '@/components/post-property/FormSection';
+import FormTextField from '@/components/post-property/FormTextField';
+import PropertyTypeSelectField from '@/components/post-property/PropertyTypeSelectField';
+import SearchableSelectField from '@/components/post-property/SearchableSelectField';
+import ImageUploadField from '@/components/post-property/ImageUploadField';
+import DocumentUploadField from '@/components/post-property/DocumentUploadField';
+import {
+  formCheckboxClass,
+  formCheckboxLabelClass,
+  formContainerClass,
+  formGrid2Class,
+  formGrid4Class,
+  formGridClass,
+  formHelpLinkClass,
+  formInnerCardClass,
+  formPageClass,
+  formPrimaryButtonClass,
+} from '@/components/post-property/formStyles';
 
 const approvalOptions = ["Don't know", 'Panchayati', 'GVMC', 'VMRDA', 'DTCP', 'RERA', 'Un Approved'];
 
@@ -24,20 +38,20 @@ const areaUnits = ['Sq.Ft', 'Sq.Yds', 'Sq.Mts', 'Acres', 'Cents', 'Grounds', 'Gu
 
 const facingOptions = ['East', 'West', 'North', 'South', 'North-East', 'North-West', 'South-East', 'South-West'];
 
-const residentialTypes = [
-  ' Flats', ' Plot', ' House', 'Builder Floor Apartment',
-  'Villas', 'Group House', 'Individual House', 'Pent House', 'Studio Apartment',
-];
+// const residentialTypes = [
+//   ' Flats', ' Plot', ' House', 'Builder Floor Apartment',
+//   'Villas', 'Group House', 'Individual House', 'Pent House', 'Studio Apartment',
+// ];
 
-const commercialTypes = [
-  'Office', 'Commercial Space', 'Office in IT Park/SEZ', 'Shop', 'Showroom', 'Land',
-  'Warehouse/Godown', 'Industrial Land', 'Industrial Building', 'Industrial Shed',
-  'Factory', 'Lease', 'Rent',
-];
+// const commercialTypes = [
+//   'Office', 'Commercial Space', 'Office in IT Park/SEZ', 'Shop', 'Showroom', 'Land',
+//   'Warehouse/Godown', 'Industrial Land', 'Industrial Building', 'Industrial Shed',
+//   'Factory', 'Lease', 'Rent',
+// ];
 
-const developmentTypes = ['Open Plots', 'Gated Community', 'Township'];
+// const developmentTypes = ['Open Plots', 'Gated Community', 'Township'];
 
-const layoutTypes = ['Approved Layout', 'Venture', 'Farm Plots'];
+// const layoutTypes = ['Approved Layout', 'Venture', 'Farm Plots'];
 
 const houseDevTypes = ['Ready to Move', 'Under Construction', 'Pre Launch'];
 
@@ -53,17 +67,58 @@ const otherServices = [
   'Village Map', 'Adangal', '1B',
 ];
 
-const residentialOptions =
-  residentialTypes.map(x => ({ label: x, value: x }));
+// const residentialOptions =
+//   residentialTypes.map(x => ({ label: x, value: x }));
 
-const commercialOptions =
-  commercialTypes.map(x => ({ label: x, value: x }));
+// const commercialOptions =
+//   commercialTypes.map(x => ({ label: x, value: x }));
 
-const developmentOptions =
-  developmentTypes.map(x => ({ label: x, value: x }));
+// const developmentOptions =
+//   developmentTypes.map(x => ({ label: x, value: x }));
 
-const layoutOptions =
-  layoutTypes.map(x => ({ label: x, value: x }));
+// const layoutOptions =
+//   layoutTypes.map(x => ({ label: x, value: x }));
+
+const residentialOptions = [
+  { label: 'Flats', value: 'Flats', units: ['SFT'] },
+  { label: 'Plot', value: 'Plot', units: ['Sq.Yards'] },
+  { label: 'House', value: 'House', units: ['Sq.Yards'] },
+  { label: 'Builder Floor Apartment', value: 'Builder Floor Apartment', units: ['SFT'] },
+  { label: 'Villas', value: 'Villas', units: ['Sq.Yards', 'SFT'] },
+  { label: 'Group House', value: 'Group House', units: ['SFT'] },
+  { label: 'Individual House', value: 'Individual House', units: ['Sq.Yards'] },
+  { label: 'Pent House', value: 'Pent House', units: ['SFT'] },
+  { label: 'Studio Apartment', value: 'Studio Apartment', units: ['SFT'] },
+  ];
+  
+  const commercialOptions = [
+  { label: 'Office', value: 'Office', units: ['SFT'] },
+  { label: 'Commercial Space', value: 'Commercial Space', units: ['SFT'] },
+  { label: 'Office in IT Park/SEZ', value: 'Office in IT Park/SEZ', units: ['SFT'] },
+  { label: 'Shop', value: 'Shop', units: ['SFT'] },
+  { label: 'Showroom', value: 'Showroom', units: ['SFT'] },
+  { label: 'Land', value: 'Land', units: ['Sq.Yards'] },
+  { label: 'Warehouse/Godown', value: 'Warehouse/Godown', units: ['Sq.Yards'] },
+  { label: 'Industrial Land', value: 'Industrial Land', units: ['Sq.Yards'] },
+  { label: 'Industrial Building', value: 'Industrial Building', units: ['SFT'] },
+  { label: 'Industrial Shed', value: 'Industrial Shed', units: ['SFT'] },
+  { label: 'Factory', value: 'Factory', units: ['Acres', 'Cents'] },
+  { label: 'Lease', value: 'Lease', units: ['SFT'] },
+  { label: 'Rent', value: 'Rent', units: ['SFT'] },
+  ];
+  
+  const developmentOptions = [
+  { label: 'Open Plots', value: 'Open Plots', units: ['Acres', 'Cents'] },
+  { label: 'Gated Community', value: 'Gated Community', units: ['Acres', 'Cents'] },
+  { label: 'Township', value: 'Township', units: ['Acres', 'Cents'] },
+  ];
+  
+  const layoutOptions = [
+  { label: 'Approved Layout', value: 'Approved Layout', units: ['Acres', 'Cents'] },
+  { label: 'Venture', value: 'Venture', units: ['Acres', 'Cents'] },
+  { label: 'Farm Plots', value: 'Farm Plots', units: ['Acres', 'Cents'] },
+  ];
+  
 
 const houseDevOptions =
   houseDevTypes.map(x => ({ label: x, value: x }));
@@ -71,8 +126,46 @@ const houseDevOptions =
 const constructionOptions =
   constructionTypes.map(x => ({ label: x, value: x }));
 
+const priceRangeOptions = priceRanges.map((x) => ({ label: x, value: x }));
+const areaUnitOptions = areaUnits.map((x) => ({ label: x, value: x }));
+const pricePerSqftOptions = ['Below 1000', '1000 - 3000', '3000 - 5000', '5000+'].map((x) => ({
+  label: x,
+  value: x,
+}));
+const propertyAgeOptions = ['New', '1-5 Years', '5-10 Years', '10+ Years'].map((x) => ({
+  label: x,
+  value: x,
+}));
+const facingSelectOptions = facingOptions.map((x) => ({ label: x, value: x }));
+const totalFloorsOptions = Array.from({ length: 50 }, (_, i) => {
+  const value = String(i + 1);
+  return { label: value, value };
+});
+const floorNumberOptions = ['Ground Floor', '1st Floor', '2nd Floor', '3rd Floor', '4+'].map((x) => ({
+  label: x,
+  value: x,
+}));
+const furnishingOptions = ['Furnished', 'Semi-Furnished', 'Unfurnished'].map((x) => ({
+  label: x,
+  value: x,
+}));
+
+const propertyUnderOptions = ['Government', 'Private'].map((x) => ({ label: x, value: x }));
+const bedRoomsOptions = ['1', '2', '3'].map((x) => ({ label: x, value: x }));
+
+const lpPlotOptions = Array.from({ length: 1000 }, (_, i) => {
+  const value = String(i + 1);
+  return { label: value, value };
+});
+
+const currentYear = new Date().getFullYear();
+const yearOptions = Array.from({ length: 101 }, (_, i) => {
+  const value = String(currentYear - i);
+  return { label: value, value };
+});
+
 export function PostPropertyPage() {
-  const [approvedBy, setApprovedBy] = useState([]);
+  const [approvedBy, setApprovedBy] = useState("");
   const [village, setVillage] = useState('');
   const [nearbyLocation, setNearbyLocation] = useState('');
   const [customNearby, setCustomNearby] = useState('');
@@ -93,14 +186,21 @@ export function PostPropertyPage() {
   const [totalFloors, setTotalFloors] = useState('');
   const [floorNumber, setFloorNumber] = useState('');
   const [furnishing, setFurnishing] = useState('');
+  const [propertyUnder, setPropertyUnder] = useState('');
+  const [lpNo, setLpNo] = useState('');
+  const [plotNo, setPlotNo] = useState('');
+  const [year, setYear] = useState('');
+  const [bedRooms, setBedRooms] = useState('');
   const [propertyGroup, setPropertyGroup] = useState('Residential');
-  const [selectedResidential, setSelectedResidential] = useState([]);
-  const [selectedCommercial, setSelectedCommercial] = useState([]);
-  const [selectedDevelopments, setSelectedDevelopments] = useState([]);
-  const [selectedLayout, setSelectedLayout] = useState([]);
-  const [selectedHouseDev, setSelectedHouseDev] = useState([]);
-  const [selectedConstruction, setSelectedConstruction] = useState([]);
+  const [selectedResidential, setSelectedResidential] = useState('');
+  const [selectedCommercial, setSelectedCommercial] = useState('');
+  const [selectedDevelopments, setSelectedDevelopments] = useState('');
+  const [selectedLayout, setSelectedLayout] = useState('');
+  const [selectedHouseDev, setSelectedHouseDev] = useState('');
+  const [selectedConstruction, setSelectedConstruction] = useState('');
   const [selectedServices, setSelectedServices] = useState([]);
+  const [propertyImages, setPropertyImages] = useState([]);
+  const [propertyDocuments, setPropertyDocuments] = useState([]);
 
   const [showLeadModal, setShowLeadModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -109,51 +209,32 @@ export function PostPropertyPage() {
     setter(list.includes(value) ? list.filter(v => v !== value) : [...list, value]);
   }
 
+  const selectedProperty =
+residentialOptions.find(x => x.value === selectedResidential) ||
+commercialOptions.find(x => x.value === selectedCommercial) ||
+developmentOptions.find(x => x.value === selectedDevelopments) ||
+layoutOptions.find(x => x.value === selectedLayout);
+
+const dynamicAreaUnitOptions =
+selectedProperty?.units?.map(unit => ({
+label: unit,
+value: unit,
+})) || areaUnitOptions;
+
+
   function handleSubmit() {
     const formData = {
       approvedBy, village, nearbyLocation, customNearby, mandal, panchayati,
       gvmc, vmrda, regArea, gvmcVmrda, priceValue, priceRange, areaValue,
       areaUnit, pricePerSqft, propertyAge, facing, totalFloors, floorNumber,
-      furnishing, propertyGroup, selectedResidential, selectedCommercial,
+      furnishing, propertyUnder, lpNo, plotNo, year, bedRooms,
+      propertyGroup, selectedResidential, selectedCommercial,
       selectedDevelopments, selectedLayout, selectedHouseDev, selectedConstruction,
-      selectedServices,
+      selectedServices, propertyImages, propertyDocuments,
     };
     console.log('Property submitted:', formData);
     alert('Property submitted successfully!');
   }
-
-  const chipRenderer = (selected, onChange) => {
-    if (!selected.length) return "Select...";
-
-    return (
-      <div className="flex flex-wrap gap-2 py-1">
-        {selected.map((item) => (
-          <div
-            key={item.value}
-            className="inline-flex items-center gap-1 rounded-full bg-accent-light text-accent px-3 py-1 text-xs font-semibold"
-          >
-            <span>{item.label}</span>
-
-            <button
-              type="button"
-              className="ml-1 rounded-full hover:bg-accent/10 p-0.5"
-              onClick={(e) => {
-                e.stopPropagation();
-
-                setSelectedResidential(
-                  selectedResidential.filter(
-                    (selectedItem) => selectedItem.value !== item.value
-                  )
-                );
-              }}
-            >
-              <X size={12} />
-            </button>
-          </div>
-        ))}
-      </div>
-    );
-  };
 
   return (
     <>
@@ -178,289 +259,304 @@ export function PostPropertyPage() {
         </div>
       </div>
 
-      <section className="py-8 bg-gray-50">
-        <div className="max-w-5xl mx-auto px-4">
+      <section className={formPageClass}>
+        <div className={formContainerClass}>
 
-          {/* Property Approved By */}
-          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mb-6">
-            <div className="bg-primary text-white text-sm font-bold px-5 py-3">Property Approved By</div>
-            <div className="p-5">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {approvalOptions.map(opt => (
-                  <label key={opt} className="flex items-center gap-2 text-[13px] text-gray-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={approvedBy.includes(opt)}
-                      onChange={() => toggleCheckbox(opt, approvedBy, setApprovedBy)}
-                      className="w-4 h-4 rounded border-gray-300 text-primary accent-primary"
-                    />
-                    {opt}
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Village Details */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-            <div className="bg-gray-700 text-white text-sm font-bold px-5 py-3 flex items-center gap-2">
-              <MapPin size={15} /> Village Details
-            </div>
-            <div className="p-5 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Village</label>
-                  <input type="text" value={village} onChange={e => setVillage(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" placeholder="Enter village name" />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Nearby Location / Landmark</label>
-                  <select value={nearbyLocation} onChange={e => setNearbyLocation(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                    <option value="">Select Nearby Location</option>
-                    {nearbyLocations.map(loc => <option key={loc}>{loc}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Add Nearby Location</label>
-                  <input type="text" value={customNearby} onChange={e => setCustomNearby(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" placeholder="Enter nearby location" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">District</label>
-                  <input type="text" value={district} onChange={e => setDistrict(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Mandal</label>
-                  <input type="text" value={mandal} onChange={e => setMandal(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Panchayati</label>
-                  <input type="text" value={panchayati} onChange={e => setPanchayati(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">GVMC Zone, Ward Number</label>
-                  <input type="text" value={gvmc} onChange={e => setGvmc(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">VMRDA</label>
-                  <input type="text" value={vmrda} onChange={e => setVmrda(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Registration Area</label>
-                  <input type="text" value={regArea} onChange={e => setRegArea(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">GVMC / VMRDA</label>
-                  <input type="text" value={gvmcVmrda} onChange={e => setGvmcVmrda(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Property Details */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-            <div className="bg-gray-700 text-white text-sm font-bold px-5 py-3">Property Details</div>
-            <div className="p-5">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Price (value)</label>
-                  <input type="number" value={priceValue} onChange={e => setPriceValue(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" placeholder="Enter value" />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Price Range</label>
-                  <select value={priceRange} onChange={e => setPriceRange(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                    <option value="">Select Price</option>
-                    {priceRanges.map(p => <option key={p}>{p}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Area</label>
-                  <input type="number" value={areaValue} onChange={e => setAreaValue(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent" placeholder="Enter area" />
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Area Unit</label>
-                  <select value={areaUnit} onChange={e => setAreaUnit(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                    <option value="">Select Unit</option>
-                    {areaUnits.map(u => <option key={u}>{u}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Price per Sq Ft</label>
-                  <select value={pricePerSqft} onChange={e => setPricePerSqft(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                    <option value="">Select</option>
-                    <option>Below 1000</option>
-                    <option>1000 - 3000</option>
-                    <option>3000 - 5000</option>
-                    <option>5000+</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Property Age</label>
-                  <select value={propertyAge} onChange={e => setPropertyAge(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                    <option value="">Select</option>
-                    <option>New</option>
-                    <option>1-5 Years</option>
-                    <option>5-10 Years</option>
-                    <option>10+ Years</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Facing</label>
-                  <select value={facing} onChange={e => setFacing(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                    <option value="">Select</option>
-                    {facingOptions.map(f => <option key={f}>{f}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Total Floors</label>
-                  <select value={totalFloors} onChange={e => setTotalFloors(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                    <option value="">Select</option>
-                    {Array.from({ length: 50 }, (_, i) => <option key={i + 1}>{i + 1}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Floor Number</label>
-                  <select value={floorNumber} onChange={e => setFloorNumber(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                    <option value="">Select</option>
-                    <option>Ground Floor</option>
-                    <option>1st Floor</option>
-                    <option>2nd Floor</option>
-                    <option>3rd Floor</option>
-                    <option>4+</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-[12px] font-semibold text-gray-600 block mb-1">Furnishing</label>
-                  <select value={furnishing} onChange={e => setFurnishing(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                    <option value="">Select</option>
-                    <option>Furnished</option>
-                    <option>Semi-Furnished</option>
-                    <option>Unfurnished</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Property Group & Types */}
-          {/* <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-            <div className="bg-gray-900 text-white text-sm font-bold px-5 py-3">Property Group & Types</div>
-            <div className="p-5 space-y-6">
-              <div>
-                <label className="text-[12px] font-semibold text-gray-600 block mb-1">Property Group</label>
-                <select value={propertyGroup} onChange={e => setPropertyGroup(e.target.value)} className="w-full max-w-xs border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-accent">
-                  <option>Residential</option>
-                  <option>Commercial</option>
-                  <option>Agricultural</option>
-                  <option>Industrial</option>
-                  <option>Developments</option>
-                  <option>Layout Developers</option>
-                  <option>House / Villas / Apartment Developers</option>
-                </select>
-              </div>
-
-              <CheckboxGroup title="Residential Types" items={residentialTypes} selected={selectedResidential} onToggle={(v) => toggleCheckbox(v, selectedResidential, setSelectedResidential)} />
-              <CheckboxGroup title="Commercial Types" items={commercialTypes} selected={selectedCommercial} onToggle={(v) => toggleCheckbox(v, selectedCommercial, setSelectedCommercial)} />
-              <CheckboxGroup title="Developments" items={developmentTypes} selected={selectedDevelopments} onToggle={(v) => toggleCheckbox(v, selectedDevelopments, setSelectedDevelopments)} />
-              <CheckboxGroup title="Layout Developers" items={layoutTypes} selected={selectedLayout} onToggle={(v) => toggleCheckbox(v, selectedLayout, setSelectedLayout)} />
-              <CheckboxGroup title="House / Villas / Apartment Developers" items={houseDevTypes} selected={selectedHouseDev} onToggle={(v) => toggleCheckbox(v, selectedHouseDev, setSelectedHouseDev)} />
-              <CheckboxGroup title="Construction Types" items={constructionTypes} selected={selectedConstruction} onToggle={(v) => toggleCheckbox(v, selectedConstruction, setSelectedConstruction)} />
-            </div>
-          </div> */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-
-            <div className="bg-primary px-5 py-5">
-              <h3 className="text-white text-lg font-bold">
-                Property Group & Types
-              </h3>
-            </div>
-
-          <div className="p-4 sm:p-5 md:p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-           
-
-              
-              <MultiSelectField
-                label="Select Residential Types"
-                options={residentialOptions}
-                value={selectedResidential}
-                onChange={setSelectedResidential}
+          <FormSection title="Property Approved By">
+            <div className={formGridClass}>
+              <PropertyTypeSelectField
+                label="Approval Authority"
+                placeholder="Select Approval Type"
+                value={approvedBy}
+                onValueChange={setApprovedBy}
+                options={approvalOptions.map((option) => ({
+                  label: option,
+                  value: option,
+                }))}
               />
-
-          
-
-              <MultiSelectField
-                label="Commercial Types"
-                options={commercialOptions}
-                value={selectedCommercial}
-                onChange={setSelectedCommercial}
-              />
-
-              <MultiSelectField
-                label="Developments"
-                options={developmentOptions}
-                value={selectedDevelopments}
-                onChange={setSelectedDevelopments}
-              />
-
-              <MultiSelectField
-                label="Layout Developers"
-                options={layoutOptions}
-                value={selectedLayout}
-                onChange={setSelectedLayout}
-              />
-
-              <MultiSelectField
-                label="House/Villas Developers"
-                options={houseDevOptions}
-                value={selectedHouseDev}
-                onChange={setSelectedHouseDev}
-              />
-
-              <MultiSelectField
-                label="Construction Types"
-                options={constructionOptions}
-                value={selectedConstruction}
-                onChange={setSelectedConstruction}
-              />
-
             </div>
+          </FormSection>
 
-          </div>
+          <FormSection title="Village Details">
+            <div className={formGridClass}>
+              <FormTextField
+                label="Village"
+                value={village}
+                onChange={(e) => setVillage(e.target.value)}
+                placeholder="Enter village name"
+              />
+              <PropertyTypeSelectField
+                label="Nearby Location / Landmark"
+                placeholder="Select Nearby Location"
+                value={nearbyLocation}
+                onValueChange={setNearbyLocation}
+                options={nearbyLocations.map((loc) => ({ label: loc, value: loc }))}
+              />
+              <FormTextField
+                label="Add Nearby Location"
+                value={customNearby}
+                onChange={(e) => setCustomNearby(e.target.value)}
+                placeholder="Enter nearby location"
+              />
+              <FormTextField
+                label="District"
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                placeholder="Enter district"
+              />
+              <FormTextField
+                label="Mandal"
+                value={mandal}
+                onChange={(e) => setMandal(e.target.value)}
+                placeholder="Enter mandal"
+              />
+              <FormTextField
+                label="Panchayati / sachivalayam"
+                value={panchayati}
+                onChange={(e) => setPanchayati(e.target.value)}
+                placeholder="Enter panchayati"
+              />
+              <FormTextField
+                label="GVMC Zone, Ward Number"
+                value={gvmc}
+                onChange={(e) => setGvmc(e.target.value)}
+                placeholder="Enter GVMC zone / ward"
+              />
+              <FormTextField
+                label="VMRDA"
+                value={vmrda}
+                onChange={(e) => setVmrda(e.target.value)}
+                placeholder="Enter VMRDA"
+              />
+              <FormTextField
+                label="Register office location"
+                value={regArea}
+                onChange={(e) => setRegArea(e.target.value)}
+                placeholder="Enter register office"
+              />
+              <FormTextField
+                label="GVMC / VMRDA"
+                value={gvmcVmrda}
+                onChange={(e) => setGvmcVmrda(e.target.value)}
+                placeholder="Enter GVMC / VMRDA"
+              />
+            </div>
+          </FormSection>
 
-          {/* Other Services */}
-          <div className="bg-white border border-gray-200 rounded-xl mb-6">
-            <div className="bg-gray-700 text-white text-sm font-bold px-5 py-3">Other Services</div>
-            <div className="p-5">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {otherServices.map(svc => (
-                  <label key={svc} className="flex items-center gap-2 text-[13px] text-gray-700 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedServices.includes(svc)}
-                      onChange={() => toggleCheckbox(svc, selectedServices, setSelectedServices)}
-                      className="w-4 h-4 rounded border-gray-300 text-primary accent-primary"
-                    />
-                    {svc}
-                  </label>
-                ))}
+          <FormSection title="Property Group & Types">
+            <div className={formGrid2Class}>
+                <PropertyTypeSelectField
+                  label="Select Residential Types"
+                  placeholder="Select Residential Type"
+                  value={selectedResidential}
+                  onValueChange={setSelectedResidential}
+                  options={residentialOptions}
+                />
+
+                <PropertyTypeSelectField
+                  label="Commercial Types"
+                  placeholder="Select Commercial Type"
+                  value={selectedCommercial}
+                  onValueChange={setSelectedCommercial}
+                  options={commercialOptions}
+                />
+
+                <PropertyTypeSelectField
+                  label="Developments"
+                  placeholder="Select Development"
+                  value={selectedDevelopments}
+                  onValueChange={setSelectedDevelopments}
+                  options={developmentOptions}
+                />
+
+                <PropertyTypeSelectField
+                  label="Layout Developers"
+                  placeholder="Select Layout Developer"
+                  value={selectedLayout}
+                  onValueChange={setSelectedLayout}
+                  options={layoutOptions}
+                />
+
+                <PropertyTypeSelectField
+                  label="House/Villas Developers"
+                  placeholder="Select House/Villas Developer"
+                  value={selectedHouseDev}
+                  onValueChange={setSelectedHouseDev}
+                  options={houseDevOptions}
+                />
+
+                <PropertyTypeSelectField
+                  label="Construction Types"
+                  placeholder="Select Construction Type"
+                  value={selectedConstruction}
+                  onValueChange={setSelectedConstruction}
+                  options={constructionOptions}
+                />
+            </div>
+          </FormSection>
+
+          <FormSection title="Property Details">
+            <div className={formGrid4Class}>
+              <FormTextField
+                label="Price (value)"
+                type="number"
+                value={priceValue}
+                onChange={(e) => setPriceValue(e.target.value)}
+                placeholder="Enter value"
+              />
+                <PropertyTypeSelectField
+                  label="Price Range"
+                  placeholder="Select Price"
+                  value={priceRange}
+                  onValueChange={setPriceRange}
+                  options={priceRangeOptions}
+                />
+              <FormTextField
+                label="Area"
+                type="number"
+                value={areaValue}
+                onChange={(e) => setAreaValue(e.target.value)}
+                placeholder="Enter area"
+              />
+                <PropertyTypeSelectField
+                  label="Area Unit"
+                  placeholder="Select Unit"
+                  value={areaUnit}
+                  onValueChange={setAreaUnit}
+                  options={dynamicAreaUnitOptions}
+                />
+                <PropertyTypeSelectField
+                  label="Price per Sq Ft"
+                  placeholder="Select"
+                  value={pricePerSqft}
+                  onValueChange={setPricePerSqft}
+                  options={pricePerSqftOptions}
+                />
+                <PropertyTypeSelectField
+                  label="Property Age"
+                  placeholder="Select"
+                  value={propertyAge}
+                  onValueChange={setPropertyAge}
+                  options={propertyAgeOptions}
+                />
+                <PropertyTypeSelectField
+                  label="Facing"
+                  placeholder="Select"
+                  value={facing}
+                  onValueChange={setFacing}
+                  options={facingSelectOptions}
+                />
+                <PropertyTypeSelectField
+                  label="Total Floors"
+                  placeholder="Select"
+                  value={totalFloors}
+                  onValueChange={setTotalFloors}
+                  options={totalFloorsOptions}
+                />
+                <PropertyTypeSelectField
+                  label="Floor Number"
+                  placeholder="Select"
+                  value={floorNumber}
+                  onValueChange={setFloorNumber}
+                  options={floorNumberOptions}
+                />
+                <PropertyTypeSelectField
+                  label="Furnishing"
+                  placeholder="Select"
+                  value={furnishing}
+                  onValueChange={setFurnishing}
+                  options={furnishingOptions}
+                />
+                <PropertyTypeSelectField
+                  label="Property Under"
+                  placeholder="Select"
+                  value={propertyUnder}
+                  onValueChange={setPropertyUnder}
+                  options={propertyUnderOptions}
+                />
+                <SearchableSelectField
+                  label="LP No."
+                  placeholder="Select LP No."
+                  searchPlaceholder="Search LP No..."
+                  value={lpNo}
+                  onValueChange={setLpNo}
+                  options={lpPlotOptions}
+                />
+                <SearchableSelectField
+                  label="Plot No."
+                  placeholder="Select Plot No."
+                  searchPlaceholder="Search Plot No..."
+                  value={plotNo}
+                  onValueChange={setPlotNo}
+                  options={lpPlotOptions}
+                />
+                <SearchableSelectField
+                  label="Year"
+                  placeholder="Select Year"
+                  searchPlaceholder="Search Year..."
+                  value={year}
+                  onValueChange={setYear}
+                  options={yearOptions}
+                />
+                <PropertyTypeSelectField
+                  label="Bed Rooms"
+                  placeholder="Select"
+                  value={bedRooms}
+                  onValueChange={setBedRooms}
+                  options={bedRoomsOptions}
+                />
+            </div>
+          </FormSection>
+
+          <FormSection title="Other Services">
+            <div className={formGrid4Class}>
+              {otherServices.map((svc) => (
+                <label key={svc} className={formCheckboxLabelClass}>
+                  <input
+                    type="checkbox"
+                    checked={selectedServices.includes(svc)}
+                    onChange={() => toggleCheckbox(svc, selectedServices, setSelectedServices)}
+                    className={formCheckboxClass}
+                  />
+                  {svc}
+                </label>
+              ))}
+            </div>
+          </FormSection>
+
+          <FormSection title="Media & Documents">
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2 xl:gap-6">
+              <div className={formInnerCardClass}>
+                <ImageUploadField
+                  label="Property Images"
+                  description="Drag and drop property photos here, or click to browse"
+                  value={propertyImages}
+                  onChange={setPropertyImages}
+                />
+              </div>
+              <div className={formInnerCardClass}>
+                <DocumentUploadField
+                  label="Property Documents"
+                  description="Drag and drop deeds, approvals, or plans here"
+                  value={propertyDocuments}
+                  onChange={setPropertyDocuments}
+                />
               </div>
             </div>
-          </div>
+          </FormSection>
 
-          {/* Submit */}
           <div className="flex justify-center sm:justify-end">
-            <button onClick={() => setShowLeadModal(true)} className="w-full sm:w-auto bg-primary text-white text-sm font-semibold px-8 py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary-dark transition-colors shadow-md">
-              <Send size={16} /> Submit Property
+            <button type="button" onClick={() => setShowLeadModal(true)} className={formPrimaryButtonClass}>
+              <Send size={16} aria-hidden /> Submit Property
             </button>
           </div>
         </div>
       </section>
 
       {/* Sticky Help */}
-      <a href="tel:9030002266" className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 bg-accent text-white font-semibold px-3 sm:px-4 py-2.5 sm:py-3 rounded-full shadow-lg hover:bg-accent-hover transition-colors flex items-center gap-2 text-[12px] sm:text-sm no-underline">
-        <Phone size={14} className="sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Need Help?</span> 9030002266
+      <a href="tel:9030002266" className={formHelpLinkClass}>
+        <Phone size={14} className="sm:size-4" aria-hidden />
+        <span className="hidden sm:inline">Need Help?</span> 9030002266
       </a>
 
 
@@ -492,6 +588,11 @@ export function PostPropertyPage() {
             totalFloors,
             floorNumber,
             furnishing,
+            propertyUnder,
+            lpNo,
+            plotNo,
+            year,
+            bedRooms,
             propertyGroup,
             selectedResidential,
             selectedCommercial,
@@ -500,6 +601,8 @@ export function PostPropertyPage() {
             selectedHouseDev,
             selectedConstruction,
             selectedServices,
+            propertyImages,
+            propertyDocuments,
             userDetails,
           };
 
@@ -518,26 +621,5 @@ export function PostPropertyPage() {
         }}
       />
     </>
-  );
-}
-
-function CheckboxGroup({ title, items, selected, onToggle }) {
-  return (
-    <div className="border-t border-gray-100 pt-4">
-      <h4 className="text-[13px] font-bold text-gray-800 mb-3">{title}</h4>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-        {items.map(item => (
-          <label key={item} className="flex items-center gap-2 text-[13px] text-gray-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={selected.includes(item)}
-              onChange={() => onToggle(item)}
-              className="w-4 h-4 rounded border-gray-300 text-primary accent-primary"
-            />
-            {item}
-          </label>
-        ))}
-      </div>
-    </div>
   );
 }
