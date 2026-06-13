@@ -11,7 +11,9 @@ import { PropertySearchPage } from './pages/PropertySearchPage';
 
 function App() {
   return (
-    <BrowserRouter basename="/~vizagland">
+    //<BrowserRouter basename="/~vizagland">
+    <BrowserRouter >
+   
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
