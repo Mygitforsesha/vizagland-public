@@ -1,5 +1,6 @@
 import { X, Phone, User, Mail, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
+import { validateCustomerDetails } from "@/lib/post-property/validateLead";
 
 export default function PropertyLeadModal({
     isOpen,
@@ -13,34 +14,26 @@ export default function PropertyLeadModal({
     });
 
     const [errors, setErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const handleSubmit = async () => {
+        const { isValid, errors: validationErrors } = validateCustomerDetails(formData);
+        setErrors(validationErrors);
+        if (!isValid) return;
 
-    const validate = () => {
-        const newErrors = {};
+        setIsSubmitting(true);
+        try {
+            await onSubmit(formData);
 
-        if (!formData.phone.trim()) {
-            newErrors.phone = "Mobile number is required";
-        } else if (!/^[6-9]\d{9}$/.test(formData.phone)) {
-            newErrors.phone = "Enter a valid mobile number";
+            setFormData({
+                name: "",
+                phone: "",
+                email: "",
+            });
+            setErrors({});
+        } finally {
+            setIsSubmitting(false);
         }
-
-        setErrors(newErrors);
-
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = () => {
-        if (!validate()) return;
-
-        onSubmit(formData);
-
-        setFormData({
-            name: "",
-            phone: "",
-            email: "",
-        });
-
-        setErrors({});
     };
 
     useEffect(() => {
@@ -48,6 +41,7 @@ export default function PropertyLeadModal({
             document.body.style.overflow = "hidden";
         } else {
             document.body.style.overflow = "";
+            setIsSubmitting(false);
         }
 
         return () => {
@@ -196,6 +190,12 @@ export default function PropertyLeadModal({
                                 className="w-full pl-10 pr-4 py-3 text-xs sm:text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-accent"
                             />
                         </div>
+
+                        {errors.email && (
+                            <p className="text-red-500 text-[11px] sm:text-xs mt-1">
+                                {errors.email}
+                            </p>
+                        )}
                     </div>
 
                     {/* Benefits */}
@@ -227,10 +227,12 @@ export default function PropertyLeadModal({
 
                     {/* Submit */}
                     <button
+                        type="button"
                         onClick={handleSubmit}
-                        className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-all"
+                        disabled={isSubmitting}
+                        className="w-full bg-primary hover:bg-primary-dark text-white font-semibold py-3 rounded-xl transition-all disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                        Submit Request
+                        {isSubmitting ? "Submitting..." : "Submit Request"}
                     </button>
 
                     <p className="text-[11px] text-center text-gray-400">

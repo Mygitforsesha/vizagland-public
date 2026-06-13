@@ -10,7 +10,8 @@ import {
   Upload,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createUploadId, formatFileSize, getFileExtension } from './uploadUtils';
+import { createPropertyDocumentUploadItem } from '@/lib/post-property/media/createUploadItems';
+import { formatFileSize, getFileExtension } from './uploadUtils';
 import {
   formBadgePrimaryClass,
   formDropzoneActiveClass,
@@ -108,13 +109,7 @@ export default function DocumentUploadField({
         ACCEPTED_EXTENSIONS.has(getFileExtension(file.name)),
       );
 
-      const newItems = validFiles.map((file) => ({
-        id: createUploadId(),
-        file,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      }));
+      const newItems = validFiles.map((file) => createPropertyDocumentUploadItem(file));
 
       if (newItems.length) onChange([...value, ...newItems]);
     },

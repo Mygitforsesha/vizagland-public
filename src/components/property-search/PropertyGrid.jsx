@@ -2,17 +2,105 @@ import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 
 import { PropertySearchCard } from './PropertyCard';
+import { ITEMS_PER_PAGE } from './usePropertySearch';
 
-function SkeletonCard() {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-pulse">
-      <div className="h-48 bg-gray-200" />
-      <div className="p-4 space-y-3">
-        <div className="h-4 bg-gray-200 rounded w-3/4" />
-        <div className="h-3 bg-gray-200 rounded w-1/2" />
-        <div className="h-5 bg-gray-200 rounded w-1/3" />
-        <div className="h-9 bg-gray-200 rounded mt-3" />
+function getGridLayoutClass(variant, viewMode) {
+  if (viewMode === 'list' && variant === 'desktop') {
+    return 'flex flex-col gap-4';
+  }
+
+  if (variant === 'mobile') {
+    return 'grid grid-cols-1 gap-4';
+  }
+
+  if (viewMode === 'grid') {
+    return 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5';
+  }
+
+  return 'grid grid-cols-1 gap-4';
+}
+
+function SkeletonCard({ variant = 'desktop', viewMode = 'grid' }) {
+  if (viewMode === 'list' && variant === 'desktop') {
+    return (
+      <div
+        className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm flex flex-col sm:flex-row animate-pulse"
+        aria-hidden
+      >
+        <div className="relative sm:w-72 flex-shrink-0">
+          <div className="w-full h-48 sm:min-h-[12rem] sm:h-full bg-gray-200" />
+        </div>
+        <div className="p-4 flex-1 flex flex-col justify-between gap-4">
+          <div className="space-y-2.5">
+            <div className="h-6 bg-gray-200 rounded w-28" />
+            <div className="h-4 bg-gray-200 rounded w-4/5" />
+            <div className="h-3.5 bg-gray-200 rounded w-1/2" />
+          </div>
+          <div className="h-9 bg-gray-200 rounded-lg w-32" />
+        </div>
       </div>
+    );
+  }
+
+  if (variant === 'mobile') {
+    return (
+      <article
+        className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100 animate-pulse"
+        aria-hidden
+      >
+        <div className="h-52 bg-gray-200" />
+        <div className="p-4 space-y-3">
+          <div className="h-6 bg-gray-200 rounded w-32" />
+          <div className="space-y-2">
+            <div className="h-4 bg-gray-200 rounded w-full" />
+            <div className="h-4 bg-gray-200 rounded w-5/6" />
+          </div>
+          <div className="h-3.5 bg-gray-200 rounded w-2/3" />
+          <div className="flex flex-wrap gap-4 pt-0.5">
+            <div className="h-3.5 bg-gray-200 rounded w-14" />
+            <div className="h-3.5 bg-gray-200 rounded w-20" />
+            <div className="h-3.5 bg-gray-200 rounded w-16" />
+          </div>
+        </div>
+      </article>
+    );
+  }
+
+  return (
+    <article
+      className="bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm flex flex-col h-full animate-pulse"
+      aria-hidden
+    >
+      <div className="h-48 bg-gray-200" />
+      <div className="p-4 flex flex-col flex-1">
+        <div className="h-6 bg-gray-200 rounded w-32 mb-2" />
+        <div className="h-4 bg-gray-200 rounded w-full mb-2" />
+        <div className="h-3.5 bg-gray-200 rounded w-2/3 mb-3" />
+        <div className="grid grid-cols-2 gap-2 mb-4 flex-1">
+          <div className="h-8 bg-gray-200 rounded-md" />
+          <div className="h-8 bg-gray-200 rounded-md" />
+          <div className="h-8 bg-gray-200 rounded-md" />
+          <div className="h-8 bg-gray-200 rounded-md" />
+        </div>
+        <div className="h-10 bg-gray-200 rounded-lg w-full" />
+      </div>
+    </article>
+  );
+}
+
+function PropertyGridSkeleton({ variant, viewMode }) {
+  const layoutClass = getGridLayoutClass(variant, viewMode);
+
+  return (
+    <div
+      className={layoutClass}
+      role="status"
+      aria-busy="true"
+      aria-label="Loading properties"
+    >
+      {Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
+        <SkeletonCard key={index} variant={variant} viewMode={viewMode} />
+      ))}
     </div>
   );
 }
@@ -28,38 +116,32 @@ export function PropertyGrid({
   onResetFilters,
 }) {
   if (isLoading) {
-    const cols =
-      variant === 'mobile'
-        ? 'grid-cols-1'
-        : viewMode === 'list'
-          ? 'grid-cols-1'
-          : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
-    return (
-      <div className={`grid ${cols} gap-4`}>
-        {Array.from({ length: 6 }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
-      </div>
-    );
+    return <PropertyGridSkeleton variant={variant} viewMode={viewMode} />;
   }
 
   if (totalCount === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center max-w-lg mx-auto shadow-sm">
+      <div
+        className="bg-white rounded-2xl border border-gray-200 p-10 lg:p-12 text-center max-w-lg mx-auto shadow-sm"
+        role="status"
+        aria-live="polite"
+      >
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <Search size={28} className="text-gray-400" aria-hidden />
         </div>
-        <h3 className="text-lg font-bold text-gray-800 mb-2">No Properties Found</h3>
-        <p className="text-sm text-gray-500 leading-relaxed mb-4">
-          No properties match your current filters. Try adjusting your search criteria.
+        <h3 className="text-lg font-bold text-gray-800 mb-2">No properties found</h3>
+        <p className="text-sm text-gray-500 leading-relaxed mb-6 max-w-sm mx-auto">
+          Try adjusting your filters or clear them to browse all available listings.
         </p>
-        <button
-          type="button"
-          onClick={onResetFilters}
-          className="text-accent font-semibold text-sm hover:underline bg-transparent border-0 cursor-pointer"
-        >
-          Reset all filters
-        </button>
+        {onResetFilters && (
+          <button
+            type="button"
+            onClick={onResetFilters}
+            className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-gray-200 text-primary text-sm font-semibold bg-white cursor-pointer hover:bg-gray-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            Reset Filters
+          </button>
+        )}
       </div>
     );
   }
@@ -100,15 +182,8 @@ export function PropertyGrid({
     );
   }
 
-  const gridClass =
-    variant === 'mobile'
-      ? 'grid grid-cols-1 gap-4'
-      : viewMode === 'grid'
-        ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5'
-        : 'grid grid-cols-1 gap-4';
-
   return (
-    <div className={gridClass}>
+    <div className={getGridLayoutClass(variant, viewMode)}>
       {results.map((property) => (
         <PropertySearchCard
           key={property.id}

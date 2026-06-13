@@ -8,26 +8,23 @@ export function MobileSearchBar({
   const {
     villageQuery,
     setVillageQuery,
-    setSelectedVillage,
-    setDistrict,
-    setMandal,
-    setPanchayati,
     setShowVillageSuggestions,
     showVillageSuggestions,
     villageSuggestions,
     villageInputRef,
     suggestionsRef,
     handleSelectVillage,
-    activeFilterCount,
+    clearLocationFilters,
+    advancedActiveFilterCount,
     sortBy,
     setSortBy,
     triggerLoading,
   } = search;
 
   return (
-    <div className="lg:hidden bg-surface px-4 pt-4 pb-3">
-      <div className="flex gap-2 items-center">
-        <div className="relative flex-1">
+    <div className="lg:hidden bg-surface px-4 pt-3 pb-1">
+      <div className="flex items-center gap-2.5">
+        <div className="relative min-w-0 flex-1">
           <Search
             size={18}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
@@ -43,15 +40,12 @@ export function MobileSearchBar({
               setShowVillageSuggestions(true);
 
               if (!e.target.value.trim()) {
-                setSelectedVillage('');
-                setDistrict('');
-                setMandal('');
-                setPanchayati('');
+                clearLocationFilters();
               }
             }}
             onFocus={() => setShowVillageSuggestions(true)}
             placeholder="Visakhapatnam"
-            className="w-full bg-white rounded-xl pl-10 pr-10 py-3 text-sm border border-gray-100 shadow-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-11 w-full bg-white rounded-xl pl-10 pr-10 text-sm border border-gray-200 shadow-sm outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
             aria-label="Search location or village"
           />
 
@@ -60,10 +54,7 @@ export function MobileSearchBar({
               type="button"
               onClick={() => {
                 setVillageQuery('');
-                setSelectedVillage('');
-                setDistrict('');
-                setMandal('');
-                setPanchayati('');
+                clearLocationFilters();
                 triggerLoading();
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 border-0 bg-transparent cursor-pointer p-0"
@@ -106,16 +97,16 @@ export function MobileSearchBar({
         <button
           type="button"
           onClick={onOpenFilters}
-          className="relative w-11 h-11 flex items-center justify-center rounded-lg bg-primary text-white border-0 cursor-pointer hover:bg-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="relative shrink-0 flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white border-0 cursor-pointer shadow-sm hover:bg-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           aria-label={`Open filters${
-            activeFilterCount > 0 ? `, ${activeFilterCount} active` : ''
+            advancedActiveFilterCount > 0 ? `, ${advancedActiveFilterCount} active` : ''
           }`}
         >
           <SlidersHorizontal size={20} aria-hidden />
 
-          {activeFilterCount > 0 && (
+          {advancedActiveFilterCount > 0 && (
             <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-accent text-white text-[10px] font-bold px-1">
-              {activeFilterCount}
+              {advancedActiveFilterCount}
             </span>
           )}
         </button>

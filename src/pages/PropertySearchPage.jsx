@@ -6,10 +6,13 @@ import { MoreFiltersDrawer } from '../components/property-search/MoreFiltersDraw
 import { MobileFilterSheet } from '../components/property-search/MobileFilterSheet';
 import { MobileSearchBar } from '../components/property-search/MobileSearchBar';
 import { MobileBottomNav } from '../components/property-search/MobileBottomNav';
-import { ActiveFilters } from '../components/property-search/ActiveFilters';
-import { SortControls } from '../components/property-search/SortControls';
+import { ResultsHeader } from '../components/property-search/ResultsHeader';
 import { PropertyGrid } from '../components/property-search/PropertyGrid';
 import { SearchPagination } from '../components/property-search/SearchPagination';
+import PropertyCategoryTabs from '../components/property-search/PropertyCategoryTabs';
+import { QuickFilterChips } from '@/components/property-search/QuickFilterChip';
+
+
 
 export function PropertySearchPage() {
   const search = usePropertySearch();
@@ -50,53 +53,53 @@ export function PropertySearchPage() {
     triggerLoading();
   }
 
+
+
+
   return (
     <>
       <MobileSearchBar search={search} onOpenFilters={openFiltersPanel} />
 
       <div className="bg-surface min-h-[calc(100vh-120px)] pb-20 lg:pb-8">
-        <div className="max-w-7xl mx-auto px-4 py-4 lg:py-6">
+        <div className="max-w-7xl mx-auto px-4 pt-0 pb-4 lg:py-6">
           <SearchToolbar
             search={search}
             onMoreFilters={() => setMoreFiltersOpen(true)}
             onSearch={() => triggerLoading()}
           />
+          <div className="mt-3 lg:mt-5 bg-white rounded-xl lg:rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="px-4 pt-1.5 pb-0 lg:px-6 lg:pt-3">
+              <PropertyCategoryTabs />
+            </div>
 
-          <div className="flex gap-6 items-start">
-            <FilterSidebar search={search} onApply={() => triggerLoading()} />
+            <div className="mx-4 lg:mx-6 border-t border-gray-100" />
+
+            <div className="px-4 py-1.5 lg:px-6 lg:py-3">
+              <QuickFilterChips
+                chips={search.quickFilterChips}
+                onToggle={search.toggleQuickFilter}
+                onClear={search.resetSearchFilters}
+              />
+            </div>
+          </div>
+
+          <div className="mt-3 lg:mt-6 flex gap-8 items-start">
+            <FilterSidebar search={search} />
 
             <div className="flex-1 min-w-0">
-              <div className="hidden lg:block">
-                <ActiveFilters chips={activeFilterChips} onClearAll={resetFilters} variant="desktop" />
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 lg:mb-5">
-                <p className="text-sm lg:text-base text-gray-700 m-0">
-                  <span className="font-bold text-primary">{filtered.length}</span>{' '}
-                  {filtered.length === 1 ? 'Property' : 'Properties'} Found
-                </p>
-                <div className="hidden lg:flex items-center gap-4">
-                  <SortControls
-                    sortBy={sortBy}
-                    onSortChange={(v) => {
-                      setSortBy(v);
-                      setCurrentPage(1);
-                      triggerLoading();
-                    }}
-                    viewMode={viewMode}
-                    onViewModeChange={setViewMode}
-                  />
-                </div>
-                <div className="lg:hidden flex items-center justify-between gap-2 flex-wrap">
-                  {activeFilterChips.length > 0 && (
-                    <ActiveFilters
-                      chips={activeFilterChips}
-                      onClearAll={resetFilters}
-                      variant="mobile"
-                    />
-                  )}
-                </div>
-              </div>
+              <ResultsHeader
+                count={filtered.length}
+                sortBy={sortBy}
+                onSortChange={(value) => {
+                  setSortBy(value);
+                  setCurrentPage(1);
+                  triggerLoading();
+                }}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                activeFilterChips={activeFilterChips}
+                onClearAllFilters={resetFilters}
+              />
 
               <PropertyGrid
                 isLoading={isLoading}
@@ -109,11 +112,15 @@ export function PropertySearchPage() {
                 onResetFilters={resetFilters}
               />
 
-              <SearchPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
+
+              <div className='mt-6'>
+                <SearchPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+
             </div>
           </div>
         </div>

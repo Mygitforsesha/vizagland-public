@@ -6,39 +6,195 @@ import {
   areaRangesByUnit,
   areaUnits,
   propertyAges,
-  facingOptions,
   furnishingOptions,
   propertyGroups,
-  listingTypes,
 } from '../../lib/searchData';
+import {
+  createInitialSearchFilters,
+  filterPropertiesByArea,
+  filterPropertiesByBuilding,
+  filterPropertiesByFeatures,
+  filterPropertiesByGroupAndType,
+  filterPropertiesByLocation,
+  filterPropertiesByPrice,
+  filterPropertiesByPropertyDetails,
+  filterPropertiesByResidentialSpecs,
+  sortProperties,
+} from '../../lib/property-search/searchFilterUtils';
+import {
+  ADVANCED_FILTER_KEYS,
+  SIDEBAR_FILTER_KEYS,
+  countActiveFiltersForKeys,
+  countActiveSearchFilters,
+} from '../../lib/property-search/searchFilterLayers';
+import { buildActiveFilterChips } from '../../lib/property-search/activeFilterChips';
+import {
+  buildQuickFilterChips,
+  filterPropertiesByQuickFilters,
+} from '../../lib/property-search/quickFilterUtils';
 
 export const ITEMS_PER_PAGE = 6;
 
+function pickInitialFilters(...keys) {
+  const initial = createInitialSearchFilters();
+  return Object.fromEntries(keys.map((key) => [key, initial[key]]));
+}
 
+function findMatchingPricePreset(minPrice, maxPrice) {
+  if (!minPrice && !maxPrice) return null;
+
+  const min = minPrice ? Number(minPrice) : 0;
+  const max = maxPrice ? Number(maxPrice) : Infinity;
+
+  return priceRanges.find(
+    (range, rangeIndex) =>
+      rangeIndex > 0 &&
+      range.min === min &&
+      (range.max === max || (!maxPrice && range.max === Infinity)),
+  );
+}
+
+function findMatchingAreaPreset(areaUnit, minArea, maxArea) {
+  if (!minArea && !maxArea) return null;
+
+  const unitKey = areaUnit || 'sq.ft';
+  const ranges = areaRangesByUnit[unitKey] || areaRangesByUnit['sq.ft'];
+  const min = minArea ? Number(minArea) : 0;
+  const max = maxArea ? Number(maxArea) : Infinity;
+
+  return ranges.find(
+    (range, rangeIndex) =>
+      rangeIndex > 0 &&
+      range.min === min &&
+      (range.max === max || (!maxArea && range.max === Infinity)),
+  );
+}
+
+function getPriceRangeIndex(minPrice, maxPrice) {
+  if (!minPrice && !maxPrice) return 0;
+
+  const preset = findMatchingPricePreset(minPrice, maxPrice);
+  if (!preset) return 0;
+
+  const index = priceRanges.indexOf(preset);
+  return index >= 0 ? index : 0;
+}
+
+function getAreaRangeIndex(areaUnit, minArea, maxArea) {
+  if (!minArea && !maxArea) return 0;
+
+  const unitKey = areaUnit || 'sq.ft';
+  const ranges = areaRangesByUnit[unitKey] || areaRangesByUnit['sq.ft'];
+  const preset = findMatchingAreaPreset(areaUnit, minArea, maxArea);
+  if (!preset) return 0;
+
+  const index = ranges.indexOf(preset);
+  return index >= 0 ? index : 0;
+}
+
+function applyPriceRangeIndex(index) {
+  const rangeIndex = Number(index);
+  if (!rangeIndex) {
+    return { minPrice: '', maxPrice: '' };
+  }
+
+  const range = priceRanges[rangeIndex];
+  if (!range) {
+    return { minPrice: '', maxPrice: '' };
+  }
+
+  return {
+    minPrice: String(range.min),
+    maxPrice: range.max === Infinity ? '' : String(range.max),
+  };
+}
+
+function applyAreaRangeIndex(areaUnit, index) {
+  const rangeIndex = Number(index);
+  if (!rangeIndex) {
+    return { minArea: '', maxArea: '' };
+  }
+
+  const unitKey = areaUnit || 'sq.ft';
+  const ranges = areaRangesByUnit[unitKey] || areaRangesByUnit['sq.ft'];
+  const range = ranges[rangeIndex];
+  if (!range) {
+    return { minArea: '', maxArea: '' };
+  }
+
+  return {
+    minArea: String(range.min),
+    maxArea: range.max === Infinity ? '' : String(range.max),
+  };
+}
+
+function normalizeFilterValue(value) {
+  return value === 'All' ? '' : value;
+}
+
+function normalizePartialFilters(partialFilters) {
+  const normalized = { ...partialFilters };
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'priceRange')) {
+    const { priceRange, ...rest } = normalized;
+    Object.assign(normalized, rest, applyPriceRangeIndex(priceRange));
+    delete normalized.priceRange;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(normalized, 'areaRange')) {
+    const { areaRange, areaUnit, ...rest } = normalized;
+    Object.assign(
+      normalized,
+      rest,
+      applyAreaRangeIndex(areaUnit ?? '', areaRange),
+    );
+    delete normalized.areaRange;
+  }
+
+  Object.keys(normalized).forEach((key) => {
+    const value = normalized[key];
+    if (key === 'propertyGroup' || key === 'propertyType') {
+      normalized[key] = Array.isArray(value) ? value : value && value !== 'All' ? [value] : [];
+      return;
+    }
+    if (key === 'facing' || key === 'approvedBy') {
+      normalized[key] = Array.isArray(value) ? value : [];
+      return;
+    }
+    if (typeof value === 'string') {
+      normalized[key] = normalizeFilterValue(value);
+    }
+  });
+
+  return normalized;
+}
+
+function getPriceFilterLabel(minPrice, maxPrice) {
+  if (!minPrice && !maxPrice) return '';
+
+  const preset = findMatchingPricePreset(minPrice, maxPrice);
+  if (preset) {
+    return preset.label.replace('All Prices', '').trim() || preset.label;
+  }
+
+  return `${minPrice || '0'} – ${maxPrice || '∞'}`;
+}
+
+function getAreaFilterLabel(areaUnit, minArea, maxArea) {
+  if (!minArea && !maxArea) return '';
+
+  const preset = findMatchingAreaPreset(areaUnit, minArea, maxArea);
+  if (preset) return preset.label;
+
+  return `${minArea || '0'} – ${maxArea || '5000+'}`;
+}
 
 export function usePropertySearch() {
-  const [selectedVillage, setSelectedVillage] = useState('');
+  const [searchFilters, setSearchFilters] = useState(createInitialSearchFilters);
   const [villageQuery, setVillageQuery] = useState('');
   const [showVillageSuggestions, setShowVillageSuggestions] = useState(false);
-  const [district, setDistrict] = useState('');
-  const [mandal, setMandal] = useState('');
-  const [panchayati, setPanchayati] = useState('');
-  const [listingType, setListingType] = useState('All');
-  const [propertyGroup, setPropertyGroup] = useState('All');
-  const [propertyType, setPropertyType] = useState('All');
-  const [priceRange, setPriceRange] = useState(0);
-  const [areaRange, setAreaRange] = useState(0);
-  const [areaUnit, setAreaUnit] = useState('All');
-  const [propertyAge, setPropertyAge] = useState('All');
-  const [facing, setFacing] = useState('All');
-  const [totalFloors, setTotalFloors] = useState('All');
-  const [floorNumber, setFloorNumber] = useState('All');
-  const [furnishing, setFurnishing] = useState('All');
-  const [areaMinInput, setAreaMinInput] = useState('');
-  const [areaMaxInput, setAreaMaxInput] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [sortBy, setSortBy] = useState('newest');
   const [viewMode, setViewMode] = useState('grid');
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -47,55 +203,164 @@ export function usePropertySearch() {
   const villageInputRef = useRef(null);
   const suggestionsRef = useRef(null);
 
+  const {
+    selectedVillage,
+    district,
+    mandal,
+    panchayati,
+    listingType,
+    propertyGroup,
+    propertyType,
+    minPrice,
+    maxPrice,
+    minArea,
+    maxArea,
+    areaUnit,
+    propertyAge,
+    bedrooms,
+    bathrooms,
+    balconies,
+    parking,
+    facing,
+    totalFloors,
+    floorNumber,
+    furnishing,
+    approvedBy,
+    amenities,
+    quickFilters,
+    sortBy,
+  } = searchFilters;
+
+  const priceRange = useMemo(
+    () => getPriceRangeIndex(minPrice, maxPrice),
+    [minPrice, maxPrice],
+  );
+
+  const areaRange = useMemo(
+    () => getAreaRangeIndex(areaUnit, minArea, maxArea),
+    [areaUnit, minArea, maxArea],
+  );
+
   useEffect(() => {
-    function handleClickOutside(e) {
+    function handleClickOutside(event) {
       if (
         suggestionsRef.current &&
-        !suggestionsRef.current.contains(e.target) &&
+        !suggestionsRef.current.contains(event.target) &&
         villageInputRef.current &&
-        !villageInputRef.current.contains(e.target)
+        !villageInputRef.current.contains(event.target)
       ) {
         setShowVillageSuggestions(false);
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const updateSearchFilters = useCallback((partialFilters) => {
+    setSearchFilters((previous) => ({
+      ...previous,
+      ...normalizePartialFilters(partialFilters),
+    }));
+  }, []);
+
+  const updateSearchFilter = useCallback((fieldName, value) => {
+    // Legacy preset indices from budget / area dropdowns map to min/max fields.
+    if (fieldName === 'priceRange') {
+      setSearchFilters((previous) => ({
+        ...previous,
+        ...applyPriceRangeIndex(value),
+      }));
+      return;
+    }
+
+    if (fieldName === 'areaRange') {
+      setSearchFilters((previous) => ({
+        ...previous,
+        ...applyAreaRangeIndex(previous.areaUnit, value),
+      }));
+      return;
+    }
+
+    if (fieldName === 'facing' || fieldName === 'approvedBy') {
+      value = Array.isArray(value) ? value : [];
+    } else if (fieldName === 'amenities' && !Array.isArray(value)) {
+      value = [];
+    } else if (fieldName === 'propertyGroup' || fieldName === 'propertyType') {
+      if (!Array.isArray(value)) {
+        value = value && value !== 'All' ? [value] : [];
+      }
+    } else if (fieldName === 'quickFilters') {
+      value = Array.isArray(value) ? value : [];
+    } else if (typeof value === 'string') {
+      value = normalizeFilterValue(value);
+    }
+
+    setSearchFilters((previous) => ({
+      ...previous,
+      [fieldName]: value,
+    }));
+  }, []);
+
   const availablePropertyTypes = useMemo(() => {
-    if (propertyGroup === 'All') return ['All'];
-    return ['All', ...propertyGroups[propertyGroup]];
+    const types = new Set();
+
+    if (propertyGroup.length > 0) {
+      propertyGroup.forEach((group) => {
+        if (propertyGroups[group]) {
+          propertyGroups[group].forEach((type) => types.add(type));
+        }
+      });
+    } else {
+      Object.values(propertyGroups).forEach((groupTypes) => {
+        groupTypes.forEach((type) => types.add(type));
+      });
+    }
+
+    return ['All', ...types];
   }, [propertyGroup]);
 
   const villageSuggestions = useMemo(() => {
     if (!villageQuery.trim()) return villageData;
-    const q = villageQuery.toLowerCase();
-    return villageData.filter((v) => v.name.toLowerCase().includes(q));
+    const query = villageQuery.toLowerCase();
+    return villageData.filter((village) => village.name.toLowerCase().includes(query));
   }, [villageQuery]);
 
   const availableAreaUnits = useMemo(() => {
-    if (propertyGroup === 'Agricultural') return ['All', 'sq.yds', 'Acres'];
-    if (propertyGroup === 'Residential') return ['All', 'sq.ft'];
-    return areaUnits;
+    if (propertyGroup.length === 0) return areaUnits;
+
+    const units = new Set(['All']);
+    propertyGroup.forEach((group) => {
+      if (group === 'Agricultural') {
+        units.add('sq.yds');
+        units.add('Acres');
+      } else if (group === 'Residential') {
+        units.add('sq.ft');
+      }
+    });
+
+    if (units.size === 1) return areaUnits;
+
+    return [...units];
   }, [propertyGroup]);
 
-  const uniqueFloors = [...new Set(searchProperties.map((p) => p.totalFloors).filter((f) => f > 0))].sort(
+  const uniqueFloors = [...new Set(searchProperties.map((property) => property.totalFloors).filter((floor) => floor > 0))].sort(
     (a, b) => a - b,
   );
-  const uniqueFloorNumbers = [...new Set(searchProperties.map((p) => p.floorNumber).filter((f) => f > 0))].sort(
+  const uniqueFloorNumbers = [...new Set(searchProperties.map((property) => property.floorNumber).filter((floor) => floor > 0))].sort(
     (a, b) => a - b,
   );
 
   const districtOptions = useMemo(
-    () => ['All', ...new Set(villageData.map((v) => v.district))],
+    () => ['All', ...new Set(villageData.map((village) => village.district))],
     [],
   );
   const mandalOptions = useMemo(
-    () => ['All', ...new Set(villageData.map((v) => v.mandal))],
+    () => ['All', ...new Set(villageData.map((village) => village.mandal))],
     [],
   );
   const panchayatOptions = useMemo(
-    () => ['All', ...new Set(villageData.map((v) => v.panchayati))],
+    () => ['All', ...new Set(villageData.map((village) => village.panchayati))],
     [],
   );
 
@@ -104,163 +369,146 @@ export function usePropertySearch() {
     setTimeout(() => setIsLoading(false), 400);
   }
 
-function handleFilterChange(setter, value) {
-      setter(value);
+  const handleFilterChange = useCallback((fieldName, value) => {
+    updateSearchFilter(fieldName, value);
     setCurrentPage(1);
     triggerLoading();
-  }
+  }, [updateSearchFilter]);
 
   function handlePropertyGroupChange(value) {
-    setPropertyGroup(value);
-    setPropertyType('All');
-    setAreaUnit('All');
-    setAreaRange(0);
+    const groups = Array.isArray(value)
+      ? value
+      : value && value !== 'All'
+        ? [value]
+        : [];
+
+    updateSearchFilters({
+      propertyGroup: groups,
+      ...pickInitialFilters('propertyType', 'areaUnit', 'minArea', 'maxArea'),
+    });
     setCurrentPage(1);
     triggerLoading();
   }
 
-  function handleSelectVillage(v) {
-    setSelectedVillage(v.name);
-    setVillageQuery(v.name);
-    setDistrict(v.district);
-    setMandal(v.mandal);
-    setPanchayati(v.panchayati);
+  function handleSelectVillage(village) {
+    updateSearchFilters({
+      selectedVillage: village.name,
+      district: village.district,
+      mandal: village.mandal,
+      panchayati: village.panchayati,
+    });
+    setVillageQuery(village.name);
     setShowVillageSuggestions(false);
     setCurrentPage(1);
     triggerLoading();
   }
 
-  const resetFilters = useCallback(() => {
-    setSelectedVillage('');
+  function clearLocationFilters() {
+    updateSearchFilters(
+      pickInitialFilters('selectedVillage', 'district', 'mandal', 'panchayati'),
+    );
+  }
+
+  const resetSearchFilters = useCallback(() => {
+    setSearchFilters(createInitialSearchFilters());
     setVillageQuery('');
-    setDistrict('');
-    setMandal('');
-    setPanchayati('');
-    setListingType('All');
-    setPropertyGroup('All');
-    setPropertyType('All');
-    setPriceRange(0);
-    setAreaRange(0);
-    setAreaUnit('All');
-    setPropertyAge('All');
-    setFacing('All');
-    setTotalFloors('All');
-    setFloorNumber('All');
-    setFurnishing('All');
-    setAreaMinInput('');
-    setAreaMaxInput('');
+    setShowVillageSuggestions(false);
     setCurrentPage(1);
     triggerLoading();
   }, []);
 
-  const filtered = useMemo(() => {
-    let result = [...searchProperties];
+  const resetSidebarFilters = useCallback(() => {
+    updateSearchFilters(pickInitialFilters(...SIDEBAR_FILTER_KEYS));
+    setCurrentPage(1);
+    triggerLoading();
+  }, [updateSearchFilters]);
 
-    if (selectedVillage) {
-      result = result.filter((p) => p.village === selectedVillage);
-    }
-    if (district && district !== 'All') {
-      result = result.filter((p) => p.district === district);
-    }
-    if (mandal && mandal !== 'All') {
-      result = result.filter((p) => p.mandal === mandal);
-    }
-    if (panchayati && panchayati !== 'All' && panchayati !== 'N/A') {
-      result = result.filter((p) => p.panchayati === panchayati);
-    }
-    if (listingType !== 'All') {
-      result = result.filter((p) => p.listingType === listingType);
-    }
-    if (propertyGroup !== 'All') {
-      result = result.filter((p) => p.propertyGroup === propertyGroup);
-    }
-    if (propertyType !== 'All') {
-      result = result.filter((p) => p.propertyType === propertyType);
-    }
-    if (priceRange > 0) {
-      const range = priceRanges[priceRange];
-      result = result.filter((p) => p.price >= range.min && p.price <= range.max);
-    }
-    if (areaRange > 0) {
-      const unitKey = areaUnit === 'All' ? 'sq.ft' : areaUnit;
-      const ranges = areaRangesByUnit[unitKey];
-      if (ranges && ranges[areaRange]) {
-        const range = ranges[areaRange];
-        result = result.filter((p) => {
-          const numericArea = parseFloat(p.area.replace(/,/g, ''));
-          return numericArea >= range.min && numericArea <= range.max;
-        });
-      }
-    }
-    const minArea = areaMinInput.trim() ? parseFloat(areaMinInput) : NaN;
-    const maxArea = areaMaxInput.trim() ? parseFloat(areaMaxInput) : NaN;
-    if (!Number.isNaN(minArea) || !Number.isNaN(maxArea)) {
-      result = result.filter((p) => {
-        const numericArea = parseFloat(p.area.replace(/,/g, ''));
-        if (!Number.isNaN(minArea) && numericArea < minArea) return false;
-        if (!Number.isNaN(maxArea) && numericArea > maxArea) return false;
-        return true;
-      });
-    }
-    if (areaUnit !== 'All') {
-      result = result.filter((p) => p.areaUnit === areaUnit);
-    }
-    if (propertyAge !== 'All') {
-      result = result.filter((p) => p.propertyAge === propertyAge);
-    }
-    if (facing !== 'All') {
-      result = result.filter((p) => p.facing === facing);
-    }
-    if (totalFloors !== 'All') {
-      const tf = parseInt(totalFloors);
-      result = result.filter((p) => p.totalFloors === tf);
-    }
-    if (floorNumber !== 'All') {
-      const fn = parseInt(floorNumber);
-      result = result.filter((p) => p.floorNumber === fn);
-    }
-    if (furnishing !== 'All') {
-      result = result.filter((p) => p.furnishing === furnishing);
-    }
+  const resetAdvancedFilters = useCallback(() => {
+    updateSearchFilters(pickInitialFilters(...ADVANCED_FILTER_KEYS));
+    setVillageQuery('');
+    setCurrentPage(1);
+    triggerLoading();
+  }, [updateSearchFilters]);
 
-    switch (sortBy) {
-      case 'price-asc':
-        result.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-desc':
-        result.sort((a, b) => b.price - a.price);
-        break;
-      case 'area-asc':
-        result.sort(
-          (a, b) =>
-            parseFloat(a.area.replace(/,/g, '')) - parseFloat(b.area.replace(/,/g, '')),
-        );
-        break;
-      default:
-        break;
-    }
+  function applySidebarFilters() {
+    setCurrentPage(1);
+    triggerLoading();
+  }
+
+  const setSortBy = useCallback((value) => {
+    updateSearchFilter('sortBy', value);
+    setCurrentPage(1);
+  }, [updateSearchFilter]);
+
+  const toggleQuickFilter = useCallback((id) => {
+    setSearchFilters((previous) => ({
+      ...previous,
+      quickFilters: previous.quickFilters.includes(id)
+        ? previous.quickFilters.filter((item) => item !== id)
+        : [...previous.quickFilters, id],
+    }));
+    setCurrentPage(1);
+    triggerLoading();
+  }, []);
+
+  const filteredBeforeQuickFilters = useMemo(() => {
+    let result = filterPropertiesByLocation(searchProperties, {
+      selectedVillage,
+      district,
+      mandal,
+      panchayati,
+    });
+
+    result = filterPropertiesByGroupAndType(result, {
+      propertyGroup,
+      propertyType,
+    });
+
+    result = filterPropertiesByPrice(result, {
+      minPrice,
+      maxPrice,
+    });
+
+    result = filterPropertiesByArea(result, {
+      minArea,
+      maxArea,
+    });
+
+    result = filterPropertiesByResidentialSpecs(result, {
+      bedrooms,
+      bathrooms,
+      balconies,
+      parking,
+    });
+
+    result = filterPropertiesByPropertyDetails(result, {
+      propertyAge,
+      furnishing,
+    });
+
+    result = filterPropertiesByBuilding(result, {
+      totalFloors,
+      floorNumber,
+    });
+
+    result = filterPropertiesByFeatures(result, {
+      facing,
+      approvedBy,
+      amenities,
+    });
 
     return result;
-  }, [
-    selectedVillage,
-    district,
-    mandal,
-    panchayati,
-    listingType,
-    propertyGroup,
-    propertyType,
-    priceRange,
-    areaRange,
-    areaUnit,
-    propertyAge,
-    facing,
-    totalFloors,
-    floorNumber,
-    furnishing,
-    areaMinInput,
-    areaMaxInput,
-    sortBy,
-  ]);
+  }, [searchFilters]);
+
+  const filtered = useMemo(() => {
+    const result = filterPropertiesByQuickFilters(filteredBeforeQuickFilters, quickFilters);
+    return sortProperties(result, sortBy);
+  }, [filteredBeforeQuickFilters, quickFilters, sortBy]);
+
+  const quickFilterChips = useMemo(
+    () => buildQuickFilterChips(filteredBeforeQuickFilters, quickFilters),
+    [filteredBeforeQuickFilters, quickFilters],
+  );
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginatedResults = filtered.slice(
@@ -268,136 +516,55 @@ function handleFilterChange(setter, value) {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  const activeFilterChips = useMemo(() => {
-    const chips = [];
-    const locationLabel = selectedVillage || (district && district !== 'All' ? district : '');
-    if (locationLabel) {
-      chips.push({
-        id: 'location',
-        label: locationLabel,
-        onRemove: () => {
-          setSelectedVillage('');
-          setVillageQuery('');
-          if (!district || district === 'All') {
-            setDistrict('');
-            setMandal('');
-            setPanchayati('');
-          }
-          setCurrentPage(1);
-          triggerLoading();
-        },
-      });
-    }
-    if (propertyType !== 'All') {
-      chips.push({
-        id: 'type',
-        label: propertyType,
-        onRemove: () => handleFilterChange(setPropertyType, 'All'),
-      });
-    }
-    if (priceRange > 0) {
-      chips.push({
-        id: 'price',
-        label: priceRanges[priceRange].label.replace('All Prices', '').trim() || priceRanges[priceRange].label,
-        onRemove: () => {
-          setPriceRange(0);
-          setCurrentPage(1);
-          triggerLoading();
-        },
-      });
-    }
-    if (listingType !== 'All') {
-      chips.push({
-        id: 'listing',
-        label: listingType,
-        onRemove: () => handleFilterChange(setListingType, 'All'),
-      });
-    }
-    if (propertyGroup !== 'All') {
-      chips.push({
-        id: 'group',
-        label: propertyGroup,
-        onRemove: () => handlePropertyGroupChange('All'),
-      });
-    }
-    if (mandal && mandal !== 'All' && !chips.some((c) => c.id === 'location')) {
-      chips.push({
-        id: 'mandal',
-        label: mandal,
-        onRemove: () => handleFilterChange(setMandal, 'All'),
-      });
-    }
-    if (facing !== 'All') {
-      chips.push({
-        id: 'facing',
-        label: facing,
-        onRemove: () => handleFilterChange(setFacing, 'All'),
-      });
-    }
-    if (areaUnit !== 'All') {
-      chips.push({
-        id: 'unit',
-        label: areaUnit,
-        onRemove: () => handleFilterChange(setAreaUnit, 'All'),
-      });
-    }
-    return chips;
-  }, [
-    selectedVillage,
-    district,
-    mandal,
-    propertyType,
-    priceRange,
-    listingType,
-    propertyGroup,
-    facing,
-    areaUnit,
-    handleFilterChange,
-    handlePropertyGroupChange,
-  ]);
+  const removeFilterKeys = useCallback((...keys) => {
+    updateSearchFilters(pickInitialFilters(...keys));
+    setCurrentPage(1);
+    triggerLoading();
+  }, [updateSearchFilters]);
 
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (selectedVillage || (district && district !== 'All')) count++;
-    if (mandal && mandal !== 'All') count++;
-    if (panchayati && panchayati !== 'All' && panchayati !== 'N/A') count++;
-    if (listingType !== 'All') count++;
-    if (propertyGroup !== 'All') count++;
-    if (propertyType !== 'All') count++;
-    if (priceRange > 0) count++;
-    if (areaRange > 0 || areaMinInput || areaMaxInput) count++;
-    if (areaUnit !== 'All') count++;
-    if (propertyAge !== 'All') count++;
-    if (facing !== 'All') count++;
-    if (totalFloors !== 'All') count++;
-    if (floorNumber !== 'All') count++;
-    if (furnishing !== 'All') count++;
-    return count;
-  }, [
-    selectedVillage,
-    district,
-    mandal,
-    panchayati,
-    listingType,
-    propertyGroup,
-    propertyType,
-    priceRange,
-    areaRange,
-    areaMinInput,
-    areaMaxInput,
-    areaUnit,
-    propertyAge,
-    facing,
-    totalFloors,
-    floorNumber,
-    furnishing,
-  ]);
+  const removeFilterArrayItem = useCallback((key, value) => {
+    setSearchFilters((previous) => ({
+      ...previous,
+      [key]: previous[key].filter((item) => item !== value),
+    }));
+    setCurrentPage(1);
+    triggerLoading();
+  }, []);
 
-  const hasActiveFilters = activeFilterCount > 0;
+  const activeFilterChips = useMemo(
+    () =>
+      buildActiveFilterChips(
+        searchFilters,
+        {
+          removeKeys: removeFilterKeys,
+          removeArrayItem: removeFilterArrayItem,
+        },
+        {
+          getPriceFilterLabel,
+          getAreaFilterLabel,
+        },
+      ),
+    [searchFilters, removeFilterKeys, removeFilterArrayItem],
+  );
+
+  const sidebarActiveFilterCount = useMemo(
+    () => countActiveFiltersForKeys(searchFilters, SIDEBAR_FILTER_KEYS),
+    [searchFilters],
+  );
+
+  const advancedActiveFilterCount = useMemo(
+    () => countActiveFiltersForKeys(searchFilters, ADVANCED_FILTER_KEYS),
+    [searchFilters],
+  );
+
+  const activeFilterCount = useMemo(
+    () => countActiveSearchFilters(searchFilters),
+    [searchFilters],
+  );
 
   function toggleWishlist(id) {
-    setWishlist((prev) => {
-      const next = new Set(prev);
+    setWishlist((previous) => {
+      const next = new Set(previous);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
@@ -410,51 +577,20 @@ function handleFilterChange(setter, value) {
     triggerLoading();
   }
 
-  function setListingPreference(value) {
-    setListingType(value);
-    setCurrentPage(1);
-    triggerLoading();
-  }
-
   return {
-    selectedVillage,
-    setSelectedVillage,
+    searchFilters,
+    priceRange,
+    areaRange,
+    updateSearchFilter,
+    updateSearchFilters,
+    resetSearchFilters,
+    resetSidebarFilters,
+    resetAdvancedFilters,
+    applySidebarFilters,
     villageQuery,
     setVillageQuery,
     showVillageSuggestions,
     setShowVillageSuggestions,
-    district,
-    setDistrict,
-    mandal,
-    setMandal,
-    panchayati,
-    setPanchayati,
-    listingType,
-    setListingType,
-    propertyGroup,
-    setPropertyGroup,
-    propertyType,
-    setPropertyType,
-    priceRange,
-    setPriceRange,
-    areaRange,
-    setAreaRange,
-    areaUnit,
-    setAreaUnit,
-    propertyAge,
-    setPropertyAge,
-    facing,
-    setFacing,
-    totalFloors,
-    setTotalFloors,
-    floorNumber,
-    setFloorNumber,
-    furnishing,
-    setFurnishing,
-    areaMinInput,
-    setAreaMinInput,
-    areaMaxInput,
-    setAreaMaxInput,
     currentPage,
     setCurrentPage,
     isLoading,
@@ -477,37 +613,36 @@ function handleFilterChange(setter, value) {
     districtOptions,
     mandalOptions,
     panchayatOptions,
-    listingTypes,
-    propertyGroups,
-    priceRanges,
-    areaRangesByUnit,
     propertyAges,
-    facingOptions,
     furnishingOptions,
     filtered,
     paginatedResults,
     totalPages,
     activeFilterChips,
+    sidebarActiveFilterCount,
+    advancedActiveFilterCount,
     activeFilterCount,
-    hasActiveFilters,
+    quickFilterChips,
+    toggleQuickFilter,
     triggerLoading,
     handleFilterChange,
-    handlePropertyGroupChange,
     handleSelectVillage,
-    resetFilters,
+    clearLocationFilters,
+    resetFilters: resetSearchFilters,
     toggleWishlist,
     applyFiltersAndClose,
-    setListingPreference,
+    priceRanges,
+    areaRangesByUnit,
   };
 }
 
-
-export function extractBhk(title, propertyType) { 
-   const match = title.match(/(\d+)\s*BHK/i);
+export function extractBhk(title, propertyType) {
+  const match = title.match(/(\d+)\s*BHK/i);
   if (match) return `${match[1]} BHK`;
   if (propertyType.toLowerCase().includes('villa')) return 'Villa';
-  if (propertyType.toLowerCase().includes('plot') || propertyType.toLowerCase().includes('land'))
+  if (propertyType.toLowerCase().includes('plot') || propertyType.toLowerCase().includes('land')) {
     return 'Plot';
+  }
   return null;
 }
 

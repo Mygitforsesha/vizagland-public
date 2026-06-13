@@ -18,7 +18,7 @@ export function SortControls({
     return (
       <button
         type="button"
-        className="w-11 h-11 flex items-center justify-center rounded-lg bg-surface border border-gray-200 text-primary cursor-pointer hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className="shrink-0 flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-primary cursor-pointer shadow-sm hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         aria-label="Sort properties"
         onClick={() => {
           const order = ['newest', 'price-asc', 'price-desc', 'area-asc'];
@@ -65,7 +65,8 @@ export function SortControls({
         <span className="font-medium whitespace-nowrap">Sort by:</span>
         <select
           value={sortBy}
-onChange={(e) => onSortChange(e.target.value)}          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 cursor-pointer"
+          onChange={(e) => onSortChange(e.target.value)}
+          className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm bg-white outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 cursor-pointer"
           aria-label="Sort properties"
         >
           {(Object.keys(sortLabels)).map((key) => (

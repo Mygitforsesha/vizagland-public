@@ -1,0 +1,68 @@
+import {
+  ShoppingCart,
+  Tag,
+  Home as HomeIcon,
+  FileText,
+} from 'lucide-react';
+import { properties } from '../../lib/data';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { horizontalScrollClassName } from './horizontalScroll';
+const categoryConfig = {
+  Buy: { label: 'For Buy', icon: ShoppingCart },
+  Sell: { label: 'For Sale', icon: Tag },
+  Rent: { label: 'For Rent', icon: HomeIcon },
+  Lease: { label: 'For Lease', icon: FileText },
+};
+
+const PropertyCategoryTabs = () => {
+  const [searchParams] = useSearchParams();
+  const [activeCategory, setActiveCategory] = useState(
+    searchParams.get('cat') || 'Buy'
+  );
+
+  function handleCategoryChange(cat) {
+    setActiveCategory(cat);
+  }
+
+  return (
+    <div className={`flex items-center gap-0 lg:gap-1 ${horizontalScrollClassName}`}>
+      {Object.keys(categoryConfig).map((cat) => {
+        const config = categoryConfig[cat];
+        const Icon = config.icon;
+        const count = properties.filter((p) => p.category === cat).length;
+
+        return (
+          <button
+            key={cat}
+            type="button"
+            onClick={() => handleCategoryChange(cat)}
+            className={`flex items-center gap-1 lg:gap-2 px-4 py-2.5 text-[13px] font-semibold whitespace-nowrap border-b-2 lg:border-b-[3px] shrink-0 transition-all duration-200
+              ${
+                activeCategory === cat
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-gray-600 hover:text-primary hover:border-gray-300'
+              }`}
+          >
+            <Icon size={15} className="shrink-0" />
+
+            {config.label}
+
+            <span
+              className={`hidden lg:inline-flex text-[10px] font-bold px-1.5 py-0.5 rounded-full
+                ${
+                  activeCategory === cat
+                    ? 'bg-accent/10 text-accent'
+                    : 'bg-gray-100 text-gray-500'
+                }`}
+            >
+              {count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+export default PropertyCategoryTabs;

@@ -6,22 +6,26 @@ export function SearchToolbar({
   onSearch,
 }) {
   const {
-    district,
-    propertyType,
+    searchFilters,
     priceRange,
     priceRanges,
     availablePropertyTypes,
     districtOptions,
     handleFilterChange,
-    setDistrict,
-    setPropertyType,
-    setPriceRange,
+    updateSearchFilter,
     setCurrentPage,
     triggerLoading,
   } = search;
 
+  const { district, propertyType } = searchFilters;
+
   const locationValue = district && district !== 'All' ? district : 'Visakhapatnam';
-  const typeValue = propertyType !== 'All' ? propertyType : 'All Types';
+  const typeValue =
+    propertyType.length === 1
+      ? propertyType[0]
+      : propertyType.length > 1
+        ? `${propertyType.length} Types`
+        : 'All Types';
   const budgetValue =
     priceRange > 0 ? priceRanges[priceRange].label.replace('All Prices', 'All').trim() : 'Any Budget';
 
@@ -37,7 +41,7 @@ export function SearchToolbar({
           label="Location"
           value={locationValue}
           options={districtOptions.filter((d) => d !== 'All')}
-          onChange={(v) => handleFilterChange(setDistrict, v || 'Visakhapatnam')}
+          onChange={(v) => handleFilterChange('district', v || 'Visakhapatnam')}
           fallback="Visakhapatnam"
         />
         <ToolbarDropdown
@@ -45,7 +49,7 @@ export function SearchToolbar({
           label="Property Type"
           value={typeValue}
           options={availablePropertyTypes.filter((t) => t !== 'All')}
-          onChange={(v) => handleFilterChange(setPropertyType, v || 'All')}
+          onChange={(v) => handleFilterChange('propertyType', v && v !== 'All' ? [v] : [])}
           fallback="All Types"
         />
         <ToolbarDropdown
@@ -54,8 +58,8 @@ export function SearchToolbar({
           value={budgetValue}
           options={priceRanges.slice(1).map((r) => r.label)}
           onChange={(label) => {
-            const idx = priceRanges.findIndex((r) => r.label === label);
-            setPriceRange(label ? (idx >= 0 ? idx : 0) : 0);
+            const idx = priceRanges.findIndex((range) => range.label === label);
+            updateSearchFilter('priceRange', label ? (idx >= 0 ? idx : 0) : 0);
             setCurrentPage(1);
             triggerLoading();
           }}

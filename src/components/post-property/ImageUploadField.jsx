@@ -3,7 +3,8 @@ import { useDropzone } from 'react-dropzone';
 import imageCompression from 'browser-image-compression';
 import { ImagePlus, Loader2, Trash2, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { createUploadId, formatFileSize } from './uploadUtils';
+import { createPropertyImageUploadItem } from '@/lib/post-property/media/createUploadItems';
+import { formatFileSize } from './uploadUtils';
 import {
   formBadgeAccentClass,
   formDropzoneActiveClass,
@@ -64,13 +65,7 @@ export default function ImageUploadField({
       setIsProcessing(true);
       try {
         const compressed = await Promise.all(filesToAdd.map((file) => compressImage(file)));
-        const newItems = compressed.map((file) => ({
-          id: createUploadId(),
-          file,
-          name: file.name,
-          size: file.size,
-          previewUrl: URL.createObjectURL(file),
-        }));
+        const newItems = compressed.map((file) => createPropertyImageUploadItem(file));
         onChange([...value, ...newItems]);
       } finally {
         setIsProcessing(false);

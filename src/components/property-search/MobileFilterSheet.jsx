@@ -1,5 +1,6 @@
 import { X } from 'lucide-react';
-import { FilterFormFields } from './FilterFormFields';
+import { AdvancedFilterPanel } from './AdvancedFilterPanel';
+import { getAdvancedFilterProps } from './getAdvancedFilterProps';
 import { OverlayPanel } from './shared';
 
 export function MobileFilterSheet({
@@ -7,55 +8,57 @@ export function MobileFilterSheet({
   onClose,
   search,
 }) {
-  const { resetFilters, applyFiltersAndClose } = search;
+  const { resetAdvancedFilters, applyFiltersAndClose, advancedActiveFilterCount } = search;
 
   return (
     <OverlayPanel
       open={open}
       onClose={onClose}
-      side="bottom"
-      ariaLabel="Filters"
+      side="fullscreen"
+      ariaLabel="More filters"
     >
-      <div
-        className="w-10 h-1 bg-gray-300 rounded-full mx-auto mt-3 flex-shrink-0"
-        aria-hidden
-      />
+      <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-gray-100 bg-white px-4 py-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="m-0 text-lg font-bold text-primary">More Filters</h2>
+            {advancedActiveFilterCount > 0 && (
+              <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold text-white">
+                {advancedActiveFilterCount}
+              </span>
+            )}
+          </div>
+          <p className="m-0 mt-0.5 text-xs text-gray-500">
+            Property, area, building &amp; amenities
+          </p>
+        </div>
 
-      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 flex-shrink-0">
         <button
           type="button"
           onClick={onClose}
-          className="w-9 h-9 flex items-center justify-center text-gray-600 border-0 bg-transparent cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded-lg"
+          className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-gray-100 text-gray-600 hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           aria-label="Close filters"
         >
           <X size={22} aria-hidden />
         </button>
+      </div>
 
-        <h2 className="text-lg font-bold text-primary m-0">
-          Filters
-        </h2>
+      <div className="flex-1 overflow-y-auto bg-surface px-4 py-5">
+        <AdvancedFilterPanel {...getAdvancedFilterProps(search)} />
+      </div>
 
+      <div className="sticky bottom-0 z-10 flex shrink-0 gap-3 border-t border-gray-100 bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
-          onClick={() => {
-            resetFilters();
-          }}
-          className="text-accent text-sm font-semibold bg-transparent border-0 cursor-pointer hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded px-1"
-          aria-label="Reset filters"
+          onClick={resetAdvancedFilters}
+          className="flex-1 cursor-pointer rounded-xl border border-gray-200 bg-white py-3.5 text-sm font-semibold text-primary hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-          Reset
+          Reset Filters
         </button>
-      </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4">
-        <FilterFormFields search={search} showExtended />
-      </div>
-
-      <div className="flex-shrink-0 p-5 border-t border-gray-100 bg-white pb-8">
         <button
           type="button"
           onClick={applyFiltersAndClose}
-          className="w-full py-3.5 rounded-full border-0 bg-accent text-white font-bold text-base cursor-pointer hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+          className="flex-1 cursor-pointer rounded-xl border-0 bg-accent py-3.5 text-sm font-semibold text-white hover:bg-accent-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
         >
           Apply Filters
         </button>
