@@ -1,24 +1,31 @@
 import { generateReferenceId } from './generateReferenceId';
-import {
-  mapPropertyDocumentsForPayload,
-  mapPropertyImagesForPayload,
-} from './media/mapMediaForPayload';
 
-/** Default server-side metadata for new property submissions. */
-const DEFAULT_METADATA = {
-  isFeatured: false,
-  propertyViews: 0,
-  propertyLeads: 0,
-  isDeleted: false,
+// FUTURE:
+// Persist PropertyImages and PropertyDocuments metadata when media services are available.
+//
+// import {
+//   mapPropertyDocumentsForPayload,
+//   mapPropertyImagesForPayload,
+// } from './media/mapMediaForPayload';
 
-  assignedTo: null,
-
-  reviewRemarks: '',
-  rejectedReason: '',
-
-  approvedAt: null,
-  approvedByUser: null,
-};
+// FUTURE:
+// Persist server-side metadata when backend services are available.
+//
+// /** Default server-side metadata for new property submissions. */
+// const DEFAULT_METADATA = {
+//   isFeatured: false,
+//   propertyViews: 0,
+//   propertyLeads: 0,
+//   isDeleted: false,
+//
+//   assignedTo: null,
+//
+//   reviewRemarks: '',
+//   rejectedReason: '',
+//
+//   approvedAt: null,
+//   approvedByUser: null,
+// };
 
 /**
  * Builds the complete property submission payload for API integration.
@@ -29,97 +36,106 @@ export function buildPropertyPayload({ formState, customer, referenceId }) {
   const resolvedReferenceId = referenceId ?? generateReferenceId();
 
   return {
-    referenceId: resolvedReferenceId,
-    submissionSource: 'post-property',
-    platform: 'web',
-    status: 'pending',
-    verified: false,
-    submittedAt: now,
-    createdAt: now,
-    updatedAt: now,
+    // referenceId: resolvedReferenceId,
+    // submissionSource: 'post-property',
+    // platform: 'web',
+    // status: 'pending',
+    // verified: false,
+    // submittedAt: now,
+    // createdAt: now,
+    // updatedAt: now,
 
-    propertyApproval: {
-      approvedBy: formState.approvedBy ?? '',
+    property_approval: {
+      property_approval_authority: formState.approvedBy ?? '',
     },
 
-    villageDetails: {
-      village: formState.village ?? '',
-      nearbyLocation: formState.nearbyLocation ?? '',
-      customNearby: formState.customNearby ?? '',
-      district: formState.district ?? '',
-      mandal: formState.mandal ?? '',
-      panchayati: formState.panchayati ?? '',
-      gvmc: formState.gvmc ?? '',
-      vmrda: formState.vmrda ?? '',
-      regArea: formState.regArea ?? '',
-      gvmcVmrda: formState.gvmcVmrda ?? '',
+    property_location: {
+      property_village: formState.village ?? '',
+      property_nearby_location: formState.nearbyLocation ?? '',
+      property_custom_nearby_location: formState.customNearby ?? '',
+      property_district: formState.district ?? '',
+      property_mandal: formState.mandal ?? '',
+      property_panchayati: formState.panchayati ?? '',
+      property_gvmc: formState.gvmc ?? '',
+      property_vmrda: formState.vmrda ?? '',
+      property_registration_area: formState.regArea ?? '',
+      property_authority: formState.gvmcVmrda ?? '',
     },
 
-    propertyGroupAndTypes: {
-      residentialType: formState.selectedResidential ?? '',
-      commercialType: formState.selectedCommercial ?? '',
-      developmentType: formState.selectedDevelopments ?? '',
-      layoutType: formState.selectedLayout ?? '',
-      propertyStatus: formState.selectedHouseDev ?? '',
-      constructionType: formState.selectedConstruction ?? '',
+    property_group_and_types: {
+      property_residential_type: formState.selectedResidential ?? '',
+      property_commercial_type: formState.selectedCommercial ?? '',
+      property_development_type: formState.selectedDevelopments ?? '',
+      property_layout_type: formState.selectedLayout ?? '',
+      property_construction_status: formState.selectedHouseDev ?? '',
+      property_construction_type: formState.selectedConstruction ?? '',
     },
 
-    propertyDetails: {
-      priceValue: formState.priceValue
+    property_details: {
+      property_price: formState.priceValue
         ? Number(formState.priceValue)
         : null,
-    
-      priceRange: formState.priceRange ?? '',
-    
-      areaValue: formState.areaValue
+
+      property_price_range: formState.priceRange ?? '',
+
+      property_area: formState.areaValue
         ? Number(formState.areaValue)
         : null,
-    
-      areaUnit: formState.areaUnit ?? '',
-    
-      pricePerSqft: formState.pricePerSqft ?? '',
-    
-      propertyAge: formState.propertyAge ?? '',
-    
-      facing: formState.facing ?? '',
-    
-      totalFloors: formState.totalFloors
+
+      property_area_unit: formState.areaUnit ?? '',
+
+      property_price_per_sqft: formState.pricePerSqft ?? '',
+
+      property_age: formState.propertyAge ?? '',
+
+      property_facing: formState.facing ?? '',
+
+      property_total_floors: formState.totalFloors
         ? Number(formState.totalFloors)
         : null,
-    
-      floorNumber: formState.floorNumber ?? '',
-    
-      furnishing: formState.furnishing ?? '',
-    
-      propertyUnder: formState.propertyUnder ?? '',
-    
-      // Keep these as strings for future values like LP-101, Plot-8A
-      lpNo: formState.lpNo ?? '',
-    
-      plotNo: formState.plotNo ?? '',
-    
-      year: formState.year
+
+      property_floor_number: formState.floorNumber ?? '',
+
+      property_furnishing: formState.furnishing ?? '',
+
+      property_under: formState.propertyUnder ?? '',
+
+      property_lp_no: formState.lpNo ?? '',
+
+      property_plot_no: formState.plotNo ?? '',
+
+      property_year: formState.year
         ? Number(formState.year)
         : null,
-    
-      bedRooms: formState.bedRooms
+
+      property_bedrooms: formState.bedRooms
         ? Number(formState.bedRooms)
         : null,
     },
 
-    otherServices: {
-      service: formState.selectedOtherService ?? '',
+    property_owner: {
+      property_owner_name: customer?.name?.trim() ?? '',
+      property_owner_phone: customer?.phone?.trim() ?? '',
+      property_owner_email: customer?.email?.trim() ?? '',
     },
 
-    propertyImages: mapPropertyImagesForPayload(formState.propertyImages),
-    propertyDocuments: mapPropertyDocumentsForPayload(formState.propertyDocuments),
-
-    customer: {
-      name: customer?.name?.trim() ?? '',
-      phone: customer?.phone?.trim() ?? '',
-      email: customer?.email?.trim() ?? '',
+    property_other_services: {
+      property_service_name: formState.selectedOtherService ?? '',
     },
 
-    metadata: { ...DEFAULT_METADATA },
+    // FUTURE:
+    // Persist PropertyImages metadata when media services are available.
+    //
+    // propertyImages: mapPropertyImagesForPayload(formState.propertyImages),
+
+    // FUTURE:
+    // Persist PropertyDocuments metadata when media services are available.
+    //
+    // propertyDocuments: mapPropertyDocumentsForPayload(formState.propertyDocuments),
+
+    // FUTURE:
+    // Persist server-side metadata when backend services are available.
+    //
+    // metadata: { ...DEFAULT_METADATA },
   };
 }

@@ -17,8 +17,9 @@ export function filterPropertiesByLocation(
 ) {
   let result = properties;
 
-  if (selectedVillage) {
-    result = result.filter((property) => property.village === selectedVillage);
+  if (hasActiveLocationValue(selectedVillage)) {
+    const village = selectedVillage.trim();
+    result = result.filter((property) => property.village === village);
   }
   if (hasActiveLocationValue(district)) {
     result = result.filter((property) => property.district === district);
@@ -312,6 +313,20 @@ export function sortProperties(properties, sortBy) {
   }
 
   return result;
+}
+
+/** Resolves Buy/Sell/Rent/Lease from mock data (`category` or `listingType`). */
+export function getPropertyListingCategory(property) {
+  return property.category ?? property.listingType ?? '';
+}
+
+/** Filters by selected listing type against property category. */
+export function filterPropertiesByListingType(properties, listingType) {
+  if (!listingType || listingType === 'All') return properties;
+
+  return properties.filter(
+    (property) => getPropertyListingCategory(property) === listingType,
+  );
 }
 
 /** Returns a fresh copy of the default search filters object. */

@@ -1,3 +1,4 @@
+import { SlidersHorizontal } from 'lucide-react';
 import {
   BudgetSelectField,
   DistrictSelectField,
@@ -5,7 +6,6 @@ import {
   PropertyTypeMultiSelectField,
 } from '@/components/post-property/fields';
 import { toEmptySelectValue, withAllOption } from '@/components/post-property/fields/selectFieldUtils';
-import { BuyRentToggle } from './shared';
 
 /**
  * Essential search filters — desktop sidebar only.
@@ -20,8 +20,10 @@ export function SidebarFilterFields({
   priceRange,
   setCurrentPage,
   triggerLoading,
+  onMoreFilters,
+  advancedActiveFilterCount = 0,
 }) {
-  const { district, mandal, propertyType, listingType } = searchFilters;
+  const { district, mandal, propertyType } = searchFilters;
 
   const budgetOptions = priceRanges.map((range, index) => ({
     label: range.label,
@@ -36,23 +38,17 @@ export function SidebarFilterFields({
 
   return (
     <div className="space-y-4">
-      <BuyRentToggle
-        value={listingType || 'All'}
-        onChange={(value) => commitFilter('listingType', value)}
+      <DistrictSelectField
+        value={toEmptySelectValue(district, '')}
+        onValueChange={(value) => commitFilter('district', value)}
+        options={withAllOption(districtOptions, 'All Districts')}
       />
 
-      <div className="rounded-xl border border-gray-100 bg-surface p-4 space-y-4">
-        <DistrictSelectField
-          value={toEmptySelectValue(district, '')}
-          onValueChange={(value) => commitFilter('district', value)}
-          options={withAllOption(districtOptions, 'All Districts')}
-        />
-        <MandalSelectField
-          value={toEmptySelectValue(mandal, '')}
-          onValueChange={(value) => commitFilter('mandal', value)}
-          options={withAllOption(mandalOptions, 'All Mandals')}
-        />
-      </div>
+      <MandalSelectField
+        value={toEmptySelectValue(mandal, '')}
+        onValueChange={(value) => commitFilter('mandal', value)}
+        options={withAllOption(mandalOptions, 'All Mandals')}
+      />
 
       <PropertyTypeMultiSelectField
         value={propertyType}
@@ -65,6 +61,23 @@ export function SidebarFilterFields({
         onValueChange={(value) => commitFilter('priceRange', value)}
         options={budgetOptions}
       />
+
+      <button
+        type="button"
+        onClick={onMoreFilters}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-200 text-primary text-sm font-semibold bg-white cursor-pointer hover:bg-gray-50 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        aria-label={`Open more filters${
+          advancedActiveFilterCount > 0 ? `, ${advancedActiveFilterCount} active` : ''
+        }`}
+      >
+        <SlidersHorizontal size={16} aria-hidden />
+        More Filters
+        {advancedActiveFilterCount > 0 && (
+          <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold text-white">
+            {advancedActiveFilterCount}
+          </span>
+        )}
+      </button>
     </div>
   );
 }

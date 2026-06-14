@@ -12,7 +12,6 @@ export const SIDEBAR_FILTER_KEYS = [
   'propertyType',
   'minPrice',
   'maxPrice',
-  'listingType',
 ];
 
 /** Filters shown in MoreFiltersDrawer / MobileFilterSheet. */

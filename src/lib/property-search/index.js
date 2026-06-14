@@ -1,3 +1,4 @@
+export { buildSearchPayload } from './buildSearchPayload';
 export {
   buildQuickFilterChips,
   filterPropertiesByQuickFilters,
@@ -11,10 +12,12 @@ export {
   filterPropertiesByBuilding,
   filterPropertiesByFeatures,
   filterPropertiesByGroupAndType,
+  filterPropertiesByListingType,
   filterPropertiesByLocation,
   filterPropertiesByPrice,
   filterPropertiesByPropertyDetails,
   filterPropertiesByResidentialSpecs,
+  getPropertyListingCategory,
   hasActiveLocationValue,
   sortProperties,
 } from './searchFilterUtils';

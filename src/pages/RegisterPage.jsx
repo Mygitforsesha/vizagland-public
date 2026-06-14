@@ -1,10 +1,12 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, Shield, Users, Headphones, Eye, EyeOff, User, Phone, Mail, MapPin, X, Plus, ArrowRight } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { CheckCircle, Shield, Users, Headphones, Eye, EyeOff, User, Phone, Mail, MapPin, X, Plus, ArrowRight, ChevronDown } from 'lucide-react';
+
+const REGISTER_API_URL = 'https://trapezoid-reprimand-registry.ngrok-free.dev/api/auth/register';
 
 const REGISTRATION_TYPES = [
-  { group: 'Role', items: ['Buyer', 'Seller', 'Owner Relative', 'Owner Friend', 'Realtor', 'Agent', 'Marketing Person', 'Promoter', 'Company', 'Builder', 'Developer'] },
+  { group: 'Role', items: ['Buyer', 'Owner', 'Owner Relative', 'Owner Friend', 'Realtor', 'agent', 'employee','Marketing Person', 'Promoter', 'Company', 'Builder', 'Developer'] },
   { group: 'Professional', items: ['Civil Engineer', 'Architect', 'Structural Engineer'] },
   { group: 'Membership', items: ['Diamond Member', 'Gold Member', 'Platinum Member', 'Bronze Member'] },
   { group: 'Media', items: ['Eenadu', 'Sakshi', 'Vaartha', 'Andhra Jyothi', 'Hindu', 'Indian Express'] },
@@ -12,46 +14,193 @@ const REGISTRATION_TYPES = [
   { group: 'Other', items: ['Others'] },
 ];
 
+const REGISTRATION_GROUP_KEYS = {
+  Membership: 'membership',
+  Role: 'roles',
+  Professional: 'professional',
+  Media: 'media',
+  'Social Media': 'socialMedia',
+  Other: 'other',
+};
+
+const INITIAL_FORM_DATA = {
+  membership: '',
+  roles: [],
+  professional: [],
+  media: [],
+  socialMedia: [],
+  other: [],
+  name: '',
+  phoneNumber: '',
+  captcha: '',
+  acceptedTerms: false,
+};
+
+const INITIAL_TOUCHED = {
+  roles: false,
+  name: false,
+  phoneNumber: false,
+  captcha: false,
+  acceptedTerms: false,
+};
+
+const FIELD_ERROR_MESSAGES = {
+  roles: 'Please select at least one role.',
+  name: 'Full name is required.',
+  phoneNumber: 'Please enter a valid 10-digit mobile number.',
+  captcha: 'Please enter the correct captcha answer.',
+  acceptedTerms: 'Please accept the Terms & Conditions.',
+};
+
+const VALIDATION_FIELD_ORDER = [
+  'roles',
+  'name',
+  'phoneNumber',
+  'captcha',
+  'acceptedTerms'
+];
+function validateField(field, formData, captchaSum) {
+  switch (field) {
+    // case 'membership':
+    //   return formData.membership ? '' : FIELD_ERROR_MESSAGES.membership;
+    case 'roles':
+      return formData.roles.length > 0 ? '' : FIELD_ERROR_MESSAGES.roles;
+    case 'name':
+      return formData.name.trim() ? '' : FIELD_ERROR_MESSAGES.name;
+    case 'phoneNumber':
+      return formData.phoneNumber.length === 10 ? '' : FIELD_ERROR_MESSAGES.phoneNumber;
+    case 'captcha':
+      if (!formData.captcha || parseInt(formData.captcha, 10) !== captchaSum) {
+        return FIELD_ERROR_MESSAGES.captcha;
+      }
+      return '';
+    case 'acceptedTerms':
+      return formData.acceptedTerms ? '' : FIELD_ERROR_MESSAGES.acceptedTerms;
+    default:
+      return '';
+  }
+}
+
+function validateAllFields(formData, captchaSum) {
+  const errors = {};
+  VALIDATION_FIELD_ORDER.forEach(field => {
+    const error = validateField(field, formData, captchaSum);
+    if (error) errors[field] = error;
+  });
+  return errors;
+}
+
+const NEARBY_LOCATION_OPTIONS = ['Bus Stand', 'Railway Station', 'Highway', 'School', 'Hospital', 'Market', 'Others'];
+
+const FORM_LABEL_CLASS = 'text-[12px] text-gray-500 block mb-1.5';
+const FORM_INPUT_CLASS = 'w-full h-10 border-0 border-b-2 border-gray-200 text-[13px] outline-none focus:border-primary bg-transparent placeholder:text-gray-400 transition-colors';
+const FORM_FIELD_CLASS = 'flex flex-col';
+
+const VILLAGE_LABEL_CLASS = 'text-[12px] text-gray-500 block mb-1.5 min-h-[2rem] leading-snug';
+const VILLAGE_CONTROL_CLASS = 'w-full h-10 border border-gray-200 rounded-lg px-3 text-[13px] outline-none focus:border-primary bg-white transition-colors';
+const VILLAGE_INPUT_CLASS = `${VILLAGE_CONTROL_CLASS} placeholder:text-gray-400`;
+const VILLAGE_SELECT_CLASS = `${VILLAGE_CONTROL_CLASS} appearance-none pr-10 cursor-pointer`;
+const VILLAGE_FIELD_CLASS = 'flex flex-col min-w-0';
+
+function FieldError({ id, message }) {
+  if (!message) return null;
+  return (
+    <p id={id} className="text-[11px] text-red-600 mt-1" role="alert">
+      {message}
+    </p>
+  );
+}
+
+function getAllSelectedTypes(formData) {
+  return [
+    ...(formData.membership ? [formData.membership] : []),
+    ...formData.roles,
+    ...formData.professional,
+    ...formData.media,
+    ...formData.socialMedia,
+    ...formData.other.filter(t => t !== 'Others'),
+  ];
+}
+
+function trimString(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function toNullableString(value) {
+  const trimmed = trimString(value);
+  return trimmed === '' ? null : trimmed;
+}
+
+function toNullableArray(arr) {
+  return arr?.length ? arr : null;
+}
+
+const DOB_INPUT_CLASS = `flex-1 basis-0 min-w-0 ${FORM_INPUT_CLASS} text-center`;
+
+function buildDateOfBirth(day, month, year) {
+  if (!trimString(day) || !trimString(month) || !trimString(year)) return null;
+  const century = parseInt(year, 10) > 30 ? '19' : '20';
+  return `${century}${year.padStart(2, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
 function RegistrationTypeStep({
-  selectedTypes,
-  setSelectedTypes,
-  customRoles,
-  setCustomRoles,
+  formData,
+  setFormData,
   onContinue,
+  touched,
+  step1SubmitAttempted,
+  submitAttempted,
+  rolesSectionRef,
+  onFieldChange,
 }) {
   const [customInput, setCustomInput] = useState('');
-  const othersSelected = selectedTypes.includes('Others');
+  const othersSelected = formData.other.includes('Others');
+  const customRoles = formData.other.filter(r => r !== 'Others');
+  const showRolesError =
+  (touched.roles || step1SubmitAttempted || submitAttempted) &&
+  formData.roles.length === 0;
+  function isTypeSelected(groupName, type) {
+    const key = REGISTRATION_GROUP_KEYS[groupName];
+    if (key === 'roles') return formData.roles.includes(type);
+    return formData[key].includes(type);
+  }
 
-  function toggleType(type) {
-    setSelectedTypes(
-      selectedTypes.includes(type)
-        ? selectedTypes.filter(t => t !== type)
-        : [...selectedTypes, type]
-    );
+  function toggleType(groupName, type) {
+    const key = REGISTRATION_GROUP_KEYS[groupName];
+    setFormData(prev => {
+      let next;
+        if (key === 'roles') {
+        next = { ...prev, roles: prev.roles.includes(type) ? prev.roles.filter(t => t !== type) : [...prev.roles, type] };
+      } else {
+        next = { ...prev, [key]: prev[key].includes(type) ? prev[key].filter(t => t !== type) : [...prev[key], type] };
+      }
+      onFieldChange(key, next);
+      return next;
+    });
   }
 
   function addCustomRole() {
     const trimmed = customInput.trim();
     if (!trimmed) return;
     const normalized = trimmed.toLowerCase();
-    const allExisting = [...selectedTypes.map(s => s.toLowerCase()), ...customRoles.map(s => s.toLowerCase())];
+    const allExisting = getAllSelectedTypes(formData).map(s => s.toLowerCase());
     if (allExisting.includes(normalized)) return;
-    setCustomRoles([...customRoles, trimmed]);
+    setFormData(prev => ({ ...prev, other: [...prev.other, trimmed] }));
     setCustomInput('');
   }
 
   function removeCustomRole(role) {
-    setCustomRoles(customRoles.filter(r => r !== role));
+    setFormData(prev => ({ ...prev, other: prev.other.filter(r => r !== role) }));
   }
 
   function handleKeyDown(e) {
     if (e.key === 'Enter') { e.preventDefault(); addCustomRole(); }
   }
 
-  const hasSelection = selectedTypes.length > 0 || customRoles.length > 0;
+  const hasSelection = getAllSelectedTypes(formData).length > 0 || formData.other.includes('Others');
 
   return (
-    <div className="min-h-screen bg-gray-50 py-6 sm:py-8 px-3 sm:px-4">
+    <div className="min-h-screen bg-surface py-6 sm:py-8 px-3 sm:px-4">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
@@ -78,16 +227,27 @@ function RegistrationTypeStep({
 
         {/* Type Groups */}
         <div className="space-y-5 sm:space-y-6">
-          {REGISTRATION_TYPES.map(group => (
-            <div key={group.group}>
+          {REGISTRATION_TYPES.map(group => {
+            const isRolesGroup = group.group === 'Role';
+            return (
+            <div
+              key={group.group}
+              ref={isRolesGroup ? rolesSectionRef : undefined}
+              tabIndex={isRolesGroup ? -1 : undefined}
+              aria-invalid={isRolesGroup && showRolesError ? true : undefined}
+              aria-describedby={isRolesGroup && showRolesError ? 'roles-error' : undefined}
+              onBlur={isRolesGroup ? () => onFieldChange('roles', formData, true) : undefined}
+              className={isRolesGroup && showRolesError ? 'p-2 -mx-2 rounded-lg border-2 border-red-500 bg-red-50' : isRolesGroup ? 'p-2 -mx-2' : undefined}
+            >
               <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">{group.group}</h3>
               <div className="flex flex-wrap gap-2 sm:gap-2.5">
                 {group.items.map(type => {
-                  const isSelected = selectedTypes.includes(type);
+                  const isSelected = isTypeSelected(group.group, type);
                   return (
                     <button
                       key={type}
-                      onClick={() => toggleType(type)}
+                      type="button"
+                      onClick={() => toggleType(group.group, type)}
                       className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border-2 text-[12px] sm:text-[13px] font-medium cursor-pointer transition-all duration-200 ${
                         isSelected
                           ? 'border-primary bg-primary/5 text-primary shadow-sm scale-[1.02]'
@@ -108,8 +268,12 @@ function RegistrationTypeStep({
                   );
                 })}
               </div>
+              {isRolesGroup && (
+                <FieldError id="roles-error" message={showRolesError ? FIELD_ERROR_MESSAGES.roles : ''} />
+              )}
             </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Others custom input */}
@@ -123,7 +287,7 @@ function RegistrationTypeStep({
                 onChange={e => setCustomInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a role and press Enter"
-                className="flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-primary transition-colors"
+                className="flex-1 h-10 border-2 border-gray-200 rounded-lg px-3 text-[13px] outline-none focus:border-primary bg-white placeholder:text-gray-400 transition-colors"
               />
               <button
                 type="button"
@@ -154,29 +318,38 @@ function RegistrationTypeStep({
         )}
 
         {/* Selected summary & Continue */}
-        {hasSelection && (
-          <div className="mt-8 sticky bottom-4">
-            <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+        <div className="mt-8 sticky bottom-4">
+          <div className={`bg-white border rounded-xl shadow-lg p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 ${showRolesError ? 'border-red-500' : 'border-gray-200'}`}>
+            {hasSelection && (
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-medium text-gray-500">Selected:</span>
                 <div className="flex flex-wrap gap-1.5 mt-1">
-                  {selectedTypes.filter(t => t !== 'Others').map(t => (
+                  {[    
+                    ...formData.roles,
+                    ...formData.professional,
+                    ...formData.media,
+                    ...formData.socialMedia,
+                  ].map(t => (
                     <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[11px] font-medium rounded-full">{t}</span>
                   ))}
+                  {formData.other.includes('Others') && (
+                    <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[11px] font-medium rounded-full">Others</span>
+                  )}
                   {customRoles.map(r => (
                     <span key={r} className="px-2 py-0.5 bg-accent/10 text-accent text-[11px] font-medium rounded-full">{r}</span>
                   ))}
                 </div>
               </div>
-              <button
-                onClick={onContinue}
-                className="flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-red-700 text-white rounded-lg text-sm font-bold border-0 cursor-pointer hover:bg-red-800 transition-colors whitespace-nowrap shadow-sm w-full sm:w-auto justify-center"
-              >
-                Continue <ArrowRight size={16} />
-              </button>
-            </div>
+            )}
+            <button
+              type="button"
+              onClick={onContinue}
+              className="flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-red-700 text-white rounded-lg text-sm font-bold border-0 cursor-pointer hover:bg-red-800 transition-colors whitespace-nowrap shadow-sm w-full sm:w-auto justify-center"
+            >
+              Continue <ArrowRight size={16} />
+            </button>
           </div>
-        )}
+        </div>
 
         {/* Login link */}
         <div className="text-center mt-6 text-[13px] text-gray-500">
@@ -188,17 +361,33 @@ function RegistrationTypeStep({
 }
 
 export function RegisterPage() {
-  const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [selectedTypes, setSelectedTypes] = useState([]);
-  const [customRoles, setCustomRoles] = useState([]);
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [touched, setTouched] = useState(INITIAL_TOUCHED);
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [step1SubmitAttempted, setStep1SubmitAttempted] = useState(false);
 
-  const [fullName, setFullName] = useState('');
+  // const membershipSectionRef = useRef(null);
+  const rolesSectionRef = useRef(null);
+  const nameRef = useRef(null);
+  const phoneRef = useRef(null);
+  const captchaRef = useRef(null);
+  const termsRef = useRef(null);
+  const pendingScrollFieldRef = useRef(null);
+
+  const fieldRefs = {
+    roles: rolesSectionRef,
+    name: nameRef,
+    phoneNumber: phoneRef,
+    captcha: captchaRef,
+    acceptedTerms: termsRef,
+  };
+
   const [dobDay, setDobDay] = useState('');
   const [dobMonth, setDobMonth] = useState('');
   const [dobYear, setDobYear] = useState('');
   const [gender, setGender] = useState('');
-  const [mobile, setMobile] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
@@ -217,18 +406,129 @@ export function RegisterPage() {
   const [gvmcVmrda, setGvmcVmrda] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
-  const [agreed, setAgreed] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [captchaA] = useState(() => Math.floor(Math.random() * 9) + 1);
   const [captchaB] = useState(() => Math.floor(Math.random() * 9) + 1);
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
+  const captchaSum = captchaA + captchaB;
 
-  function handleSendOtp() {
-    if (mobile.length !== 10) { showToast('Enter a valid 10-digit mobile number first.', 'danger'); return; }
-    setOtpSent(true);
-    showToast('OTP sent to +91 ' + mobile, 'success');
+  function updateFieldError(field, data = formData) {
+    const error = validateField(field, data, captchaSum);
+    setFieldErrors(prev => {
+      if (!error) {
+        if (!(field in prev)) return prev;
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      }
+      return { ...prev, [field]: error };
+    });
   }
+
+  function handleFieldChange(field, nextFormData, markTouched = false) {
+    if (markTouched) {
+      setTouched(prev => ({ ...prev, [field]: true }));
+    }
+
+    setFieldErrors(prev => {
+      const shouldValidate = markTouched
+        || prev[field]
+        || touched[field]
+        || submitAttempted
+        || (field === 'membership' && step1SubmitAttempted);
+
+      if (!shouldValidate) return prev;
+
+      const error = validateField(field, nextFormData, captchaSum);
+      if (!error) {
+        if (!(field in prev)) return prev;
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      }
+      return { ...prev, [field]: error };
+    });
+  }
+
+  function handleBlur(field) {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    updateFieldError(field);
+  }
+
+  function getVisibleError(field) {
+    if (!fieldErrors[field]) return '';
+    if (field === 'membership') {
+      return (touched.membership || step1SubmitAttempted || submitAttempted) ? fieldErrors[field] : '';
+    }
+    return (touched[field] || submitAttempted) ? fieldErrors[field] : '';
+  }
+
+  function scrollToField(field) {
+    if (field === 'membership' && step !== 1) {
+      pendingScrollFieldRef.current = 'membership';
+      setStep(1);
+      return;
+    }
+
+    const el = fieldRefs[field]?.current;
+    if (!el) return;
+
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setTimeout(() => {
+      if (field === 'acceptedTerms') {
+        document.getElementById('terms')?.focus();
+      } else {
+        el.focus?.({ preventScroll: true });
+      }
+    }, 300);
+  }
+
+  function focusFirstInvalidField(errors) {
+    const firstInvalid = VALIDATION_FIELD_ORDER.find(field => errors[field]);
+    if (firstInvalid) scrollToField(firstInvalid);
+  }
+
+  useEffect(() => {
+    if (step === 1 && pendingScrollFieldRef.current === 'membership') {
+      const el = membershipSectionRef.current;
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => el.focus(), 300);
+        pendingScrollFieldRef.current = null;
+      }
+    }
+  }, [step]);
+
+  function handleStep1Continue() {
+    setStep1SubmitAttempted(true);
+  
+    setTouched(prev => ({
+      ...prev,
+      roles: true,
+    }));
+  
+    const error = validateField('roles', formData, captchaSum);
+  
+    if (error) {
+      setFieldErrors(prev => ({
+        ...prev,
+        roles: error,
+      }));
+  
+      scrollToField('roles');
+      return;
+    }
+  
+    updateFieldError('roles');
+  
+    setStep(2);
+  }
+  // Future use: send OTP functionality
+  // function handleSendOtp() {
+  //   if (formData.phoneNumber.length !== 10) { showToast('Enter a valid 10-digit mobile number first.', 'danger'); return; }
+  //   setOtpSent(true);
+  //   showToast('OTP sent to +91 ' + formData.phoneNumber, 'success');
+  // }
 
   function handleVerifyOtp() {
     if (otp.length < 4) { showToast('Please enter a valid OTP.', 'danger'); return; }
@@ -241,65 +541,129 @@ export function RegisterPage() {
     setTimeout(() => setToast(null), 4000);
   }
 
+  function buildRegisterPayload() {
+    return {
+      user_membership: toNullableString(formData.membership),
+      user_roles: toNullableArray(formData.roles),
+      user_professional: toNullableArray(formData.professional),
+      user_media: toNullableArray(formData.media),
+      user_socialMedia: toNullableArray(formData.socialMedia),
+      user_other: toNullableArray(formData.other),
+      user_full_name: trimString(formData.name),
+      user_dateOfBirth: buildDateOfBirth(dobDay, dobMonth, dobYear),
+      user_gender: toNullableString(gender),
+      user_phone: trimString(formData.phoneNumber),
+      user_email: toNullableString(email),
+      user_village: toNullableString(village),
+      user_nearbyLocation: toNullableString(nearbyLocation),
+      user_customNearbyLocation: nearbyLocation === 'Others' ? toNullableString(customNearby) : null,
+      user_district: toNullableString(district),
+      user_mandal: toNullableString(mandal),
+      user_panchayati: toNullableString(panchayati),
+      user_gvmcZoneWardNumber: toNullableString(gvmc),
+      user_vmrda: toNullableString(vmrda),
+      user_registrationArea: toNullableString(regArea),
+      user_gvmcVmrda: toNullableString(gvmcVmrda),
+      user_password: toNullableString(password),
+    };
+  }
+
+  function resetForm() {
+    setStep(1);
+    setFormData(INITIAL_FORM_DATA);
+    setFieldErrors({});
+    setTouched(INITIAL_TOUCHED);
+    setSubmitAttempted(false);
+    setStep1SubmitAttempted(false);
+    setDobDay('');
+    setDobMonth('');
+    setDobYear('');
+    setGender('');
+    setOtp('');
+    setOtpSent(false);
+    setOtpVerified(false);
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setVillage('');
+    setNearbyLocation('');
+    setCustomNearby('');
+    setDistrict('');
+    setMandal('');
+    setPanchayati('');
+    setGvmc('');
+    setVmrda('');
+    setRegArea('');
+    setGvmcVmrda('');
+    setShowPassword(false);
+    setShowConfirm(false);
+  }
+
   async function handleRegister(e) {
     e.preventDefault();
-    if (!fullName.trim()) { showToast('Please enter your full name.', 'danger'); return; }
-    if (!dobDay || !dobMonth || !dobYear) { showToast('Please enter your date of birth.', 'danger'); return; }
-    if (!gender) { showToast('Please select your gender.', 'danger'); return; }
-    if (mobile.length !== 10) { showToast('Please enter a valid 10-digit mobile number.', 'danger'); return; }
-    if (!otpVerified) { showToast('Please verify your mobile number with OTP.', 'danger'); return; }
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Please enter a valid email address.', 'danger'); return; }
-    if (password.length < 6) { showToast('Password must be at least 6 characters.', 'danger'); return; }
-    if (password !== confirmPassword) { showToast('Passwords do not match.', 'danger'); return; }
-    if (parseInt(captchaAnswer) !== captchaA + captchaB) { showToast('Incorrect captcha answer. Please try again.', 'danger'); return; }
-    if (!agreed) { showToast('Please agree to the terms and conditions.', 'danger'); return; }
+    if (isSubmitting) return;
 
-    setLoading(true);
-    const roles = [...selectedTypes.filter(t => t !== 'Others'), ...customRoles];
-    const signUpEmail = email.trim() || `${mobile}@placeholder.vizagland.com`;
-    const { error } = await supabase.auth.signUp({
-      email: signUpEmail,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-          date_of_birth: `${parseInt(dobYear) > 30 ? '19' : '20'}${dobYear.padStart(2, '0')}-${dobMonth.padStart(2, '0')}-${dobDay.padStart(2, '0')}`,
-          gender,
-          mobile,
-          registration_types: roles,
-          village,
-          nearby_location: nearbyLocation || customNearby,
-          district,
-          mandal,
-          panchayati,
-          gvmc,
-          vmrda,
-          registration_area: regArea,
-          gvmc_vmrda: gvmcVmrda,
-        },
-      },
+    setSubmitAttempted(true);
+    setTouched({
+      roles: true,
+      name: true,
+      phoneNumber: true,
+      captcha: true,
+      acceptedTerms: true,
     });
-    setLoading(false);
 
-    if (error) { showToast(error.message, 'danger'); return; }
-    showToast('Account created successfully! Redirecting...', 'success');
-    setTimeout(() => navigate('/login'), 1500);
+    const errors = validateAllFields(formData, captchaSum);
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      focusFirstInvalidField(errors);
+      return;
+    }
+
+    const payload = buildRegisterPayload();
+    console.log('Register Payload:', payload);
+
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post(REGISTER_API_URL, payload);
+      console.log('Register Response:', response.data);
+      showToast('Registration successful.', 'success');
+      resetForm();
+    } catch (error) {
+      const message = error.response?.data?.message || 'Something went wrong. Please try again.';
+      showToast(message, 'danger');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (step === 1) {
     return (
       <RegistrationTypeStep
-        selectedTypes={selectedTypes}
-        setSelectedTypes={setSelectedTypes}
-        customRoles={customRoles}
-        setCustomRoles={setCustomRoles}
-        onContinue={() => setStep(2)}
+        formData={formData}
+        setFormData={setFormData}
+        onContinue={handleStep1Continue}
+        touched={touched}
+        step1SubmitAttempted={step1SubmitAttempted}
+        submitAttempted={submitAttempted}
+        rolesSectionRef={rolesSectionRef}
+        onFieldChange={handleFieldChange}
       />
     );
   }
 
+  const nameError = getVisibleError('name');
+  const phoneError = getVisibleError('phoneNumber');
+  const captchaError = getVisibleError('captcha');
+  const termsError = getVisibleError('acceptedTerms');
+
+  const selectedTypeSummary = [
+    ...getAllSelectedTypes(formData),
+    ...(formData.other.includes('Others') ? ['Others'] : []),
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-3 sm:p-6">
+    <div className="min-h-screen bg-surface flex items-center justify-center p-3 sm:p-6">
       <div className="flex w-full max-w-[960px] min-h-[600px] bg-white rounded-2xl overflow-hidden shadow-xl">
         {/* Left Banner */}
         <div className="hidden md:flex w-[40%] bg-gradient-to-br from-primary to-primary-dark p-6 lg:p-10 flex-col justify-between relative overflow-hidden">
@@ -340,7 +704,7 @@ export function RegisterPage() {
             <div className="mb-4">
               <p className="text-blue-300 text-[11px] mb-1.5">Registering as:</p>
               <div className="flex flex-wrap gap-1.5">
-                {[...selectedTypes.filter(t => t !== 'Others'), ...customRoles].map(t => (
+                {selectedTypeSummary.map(t => (
                   <span key={t} className="px-2 py-0.5 bg-white/10 text-blue-200 text-[10px] font-medium rounded-full">{t}</span>
                 ))}
               </div>
@@ -375,49 +739,97 @@ export function RegisterPage() {
           <p className="text-[13px] text-gray-500 mb-5">Fill in your details to complete registration.</p>
 
           {/* Mobile selected types */}
-          <div className="md:hidden flex flex-wrap gap-1.5 mb-4 p-3 bg-gray-50 rounded-lg">
+          <div className="md:hidden flex flex-wrap gap-1.5 mb-4 p-3 bg-surface border border-gray-200 rounded-lg">
             <span className="text-[11px] text-gray-500 font-medium w-full mb-1">Registering as:</span>
-            {[...selectedTypes.filter(t => t !== 'Others'), ...customRoles].map(t => (
+            {selectedTypeSummary.map(t => (
               <span key={t} className="px-2 py-0.5 bg-primary/10 text-primary text-[11px] font-medium rounded-full">{t}</span>
             ))}
             <button onClick={() => setStep(1)} className="text-[11px] text-red-600 font-medium bg-transparent border-0 cursor-pointer ml-auto">Change</button>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
-            <div>
-              <label className="text-[12px] text-gray-500 block mb-1">Full Name</label>
+            <div className={FORM_FIELD_CLASS}>
+              <label htmlFor="register-name" className={FORM_LABEL_CLASS}>Full Name</label>
               <div className="relative">
                 <User size={15} className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="text" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Enter your full name" required className="w-full border-0 border-b-2 border-gray-200 py-2 pl-6 text-sm outline-none focus:border-primary bg-transparent placeholder:text-gray-400" />
+                <input
+                  ref={nameRef}
+                  id="register-name"
+                  type="text"
+                  value={formData.name}
+                  onChange={e => {
+                    const next = { ...formData, name: e.target.value };
+                    setFormData(next);
+                    handleFieldChange('name', next);
+                  }}
+                  onBlur={() => handleBlur('name')}
+                  placeholder="Enter your full name"
+                  aria-invalid={nameError ? true : undefined}
+                  aria-describedby={nameError ? 'name-error' : undefined}
+                  className={`${FORM_INPUT_CLASS} pl-6 ${nameError ? 'border-red-500 bg-red-50' : ''}`}
+                />
               </div>
+              <FieldError id="name-error" message={nameError} />
             </div>
 
             {/* Date of Birth */}
-            <div>
-              <label className="text-[12px] text-gray-500 block mb-1">Date of Birth (DD / MM / YY)</label>
-              <div className="flex gap-2 sm:gap-3">
-                <input type="text" value={dobDay} onChange={e => setDobDay(e.target.value.replace(/\D/g, ''))} maxLength={2} placeholder="DD" className="w-16 border-0 border-b-2 border-gray-200 py-2 text-sm text-center outline-none focus:border-primary bg-transparent placeholder:text-gray-400" />
-                <input type="text" value={dobMonth} onChange={e => setDobMonth(e.target.value.replace(/\D/g, ''))} maxLength={2} placeholder="MM" className="w-16 border-0 border-b-2 border-gray-200 py-2 text-sm text-center outline-none focus:border-primary bg-transparent placeholder:text-gray-400" />
-                <input type="text" value={dobYear} onChange={e => setDobYear(e.target.value.replace(/\D/g, ''))} maxLength={2} placeholder="YY" className="w-16 border-0 border-b-2 border-gray-200 py-2 text-sm text-center outline-none focus:border-primary bg-transparent placeholder:text-gray-400" />
+            <div className={FORM_FIELD_CLASS}>
+              <label className={FORM_LABEL_CLASS}>Date of Birth (DD / MM / YY)</label>
+              <div className="flex gap-3 w-full max-w-[15rem] sm:max-w-[16.5rem]">
+                <input
+                  id="register-dob-day"
+                  type="text"
+                  inputMode="numeric"
+                  value={dobDay}
+                  onChange={e => setDobDay(e.target.value.replace(/\D/g, ''))}
+                  maxLength={2}
+                  placeholder="DD"
+                  aria-label="Day"
+                  className={DOB_INPUT_CLASS}
+                />
+                <input
+                  id="register-dob-month"
+                  type="text"
+                  inputMode="numeric"
+                  value={dobMonth}
+                  onChange={e => setDobMonth(e.target.value.replace(/\D/g, ''))}
+                  maxLength={2}
+                  placeholder="MM"
+                  aria-label="Month"
+                  className={DOB_INPUT_CLASS}
+                />
+                <input
+                  id="register-dob-year"
+                  type="text"
+                  inputMode="numeric"
+                  value={dobYear}
+                  onChange={e => setDobYear(e.target.value.replace(/\D/g, ''))}
+                  maxLength={2}
+                  placeholder="YY"
+                  aria-label="Year"
+                  className={DOB_INPUT_CLASS}
+                />
               </div>
             </div>
 
             {/* Gender */}
-            <div>
-              <label className="text-[12px] text-gray-500 block mb-1">Gender</label>
-              <div className="flex gap-3">
+            <div className={FORM_FIELD_CLASS}>
+              <label className={FORM_LABEL_CLASS}>Gender</label>
+              <div className="grid grid-cols-2 gap-3 w-full max-w-[15rem] sm:max-w-[16.5rem]" role="radiogroup" aria-label="Gender">
                 {(['Male', 'Female']).map(g => (
                   <button
                     key={g}
                     type="button"
+                    role="radio"
+                    aria-checked={gender === g}
                     onClick={() => setGender(g)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg border-2 text-[13px] font-medium cursor-pointer transition-all ${
+                    className={`flex items-center justify-center gap-2 h-10 w-full rounded-lg border-2 text-[13px] font-medium cursor-pointer transition-colors ${
                       gender === g
                         ? 'border-primary bg-primary/5 text-primary'
                         : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
                     }`}
                   >
-                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${gender === g ? 'border-primary' : 'border-gray-300'}`}>
+                    <div className={`w-4 h-4 shrink-0 rounded-full border-2 flex items-center justify-center ${gender === g ? 'border-primary' : 'border-gray-300'}`}>
                       {gender === g && <div className="w-2 h-2 rounded-full bg-primary" />}
                     </div>
                     {g}
@@ -426,19 +838,38 @@ export function RegisterPage() {
               </div>
             </div>
 
-            <div>
-              <label className="text-[12px] text-gray-500 block mb-1">Mobile Number</label>
-              <div className="flex items-end gap-2 sm:gap-3">
+            <div className={FORM_FIELD_CLASS}>
+              <label htmlFor="register-phone" className={FORM_LABEL_CLASS}>Mobile Number</label>
+              <div className="flex items-end gap-3">
                 <div className="relative flex items-center flex-1">
                   <Phone size={15} className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-sm text-gray-500">+91</span>
-                  <input type="tel" value={mobile} onChange={e => { setMobile(e.target.value.replace(/\D/g, '')); setOtpSent(false); setOtpVerified(false); }} maxLength={10} placeholder="10-digit mobile" required className="w-full border-0 border-b-2 border-gray-200 py-2 pl-16 text-sm outline-none focus:border-primary bg-transparent placeholder:text-gray-400" />
+                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-[13px] text-gray-500">+91</span>
+                  <input
+                    ref={phoneRef}
+                    id="register-phone"
+                    type="tel"
+                    value={formData.phoneNumber}
+                    onChange={e => {
+                      const next = { ...formData, phoneNumber: e.target.value.replace(/\D/g, '') };
+                      setFormData(next);
+                      setOtpSent(false);
+                      setOtpVerified(false);
+                      handleFieldChange('phoneNumber', next);
+                    }}
+                    onBlur={() => handleBlur('phoneNumber')}
+                    maxLength={10}
+                    placeholder="10-digit mobile"
+                    aria-invalid={phoneError ? true : undefined}
+                    aria-describedby={phoneError ? 'phone-error' : undefined}
+                    className={`${FORM_INPUT_CLASS} pl-16 ${phoneError ? 'border-red-500 bg-red-50' : ''}`}
+                  />
                 </div>
-                {!otpVerified && (
-                  <button type="button" onClick={handleSendOtp} disabled={mobile.length !== 10} className="text-[11px] sm:text-[12px] font-semibold text-primary border border-primary rounded-md px-2.5 sm:px-3 py-1.5 bg-transparent cursor-pointer hover:bg-primary/5 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
+                {/* Future use: OTP verification button */}
+                {/* {!otpVerified && (
+                  <button type="button" onClick={handleSendOtp} disabled={formData.phoneNumber.length !== 10} className="text-[11px] sm:text-[12px] font-semibold text-primary border border-primary rounded-md px-2.5 sm:px-3 py-1.5 bg-transparent cursor-pointer hover:bg-primary/5 transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
                     {otpSent ? 'Resend' : 'Send OTP'}
                   </button>
-                )}
+                )} */}
                 {otpVerified && (
                   <span className="flex items-center gap-1 text-green-600 text-[12px] font-semibold whitespace-nowrap">
                     <CheckCircle size={14} /> Verified
@@ -446,125 +877,169 @@ export function RegisterPage() {
                 )}
               </div>
               {otpSent && !otpVerified && (
-                <div className="flex items-end gap-2 sm:gap-3 mt-3 animate-fade-in">
+                <div className="flex items-end gap-3 mt-3 animate-fade-in">
                   <div className="flex-1">
-                    <label className="text-[11px] text-gray-500 block mb-1">Enter OTP</label>
-                    <input type="text" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} maxLength={6} placeholder="Enter 4-6 digit OTP" className="w-full border-0 border-b-2 border-gray-200 py-2 text-sm outline-none focus:border-primary bg-transparent placeholder:text-gray-400 tracking-widest font-mono" />
+                    <label className={`${FORM_LABEL_CLASS} text-[11px]`}>Enter OTP</label>
+                    <input type="text" value={otp} onChange={e => setOtp(e.target.value.replace(/\D/g, ''))} maxLength={6} placeholder="Enter 4-6 digit OTP" className={`${FORM_INPUT_CLASS} tracking-widest font-mono`} />
                   </div>
-                  <button type="button" onClick={handleVerifyOtp} disabled={otp.length < 4} className="text-[12px] font-semibold text-white bg-primary rounded-md px-3 sm:px-4 py-1.5 border-0 cursor-pointer hover:bg-primary-dark transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
+                  <button type="button" onClick={handleVerifyOtp} disabled={otp.length < 4} className="h-10 text-[13px] font-semibold text-white bg-primary rounded-lg px-3 sm:px-4 border-0 cursor-pointer hover:bg-primary-dark transition-colors whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed">
                     Verify
                   </button>
                 </div>
               )}
+              <FieldError id="phone-error" message={phoneError} />
             </div>
 
-            <div>
-              <label className="text-[12px] text-gray-500 block mb-1">Email Address <span className="text-gray-400 font-normal">(optional)</span></label>
+            <div className={FORM_FIELD_CLASS}>
+              <label htmlFor="register-email" className={FORM_LABEL_CLASS}>Email Address <span className="text-gray-400 font-normal">(optional)</span></label>
               <div className="relative">
                 <Mail size={15} className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="w-full border-0 border-b-2 border-gray-200 py-2 pl-6 text-sm outline-none focus:border-primary bg-transparent placeholder:text-gray-400" />
+                <input id="register-email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className={`${FORM_INPUT_CLASS} pl-6`} />
               </div>
             </div>
 
             {/* Village Details */}
             <div className="border border-gray-200 rounded-xl overflow-hidden">
-              <div className="bg-gray-700 text-white text-[13px] font-bold px-4 py-2.5 flex items-center gap-2">
+              <div className="bg-primary text-white text-[13px] font-bold px-4 py-2.5 flex items-center gap-2">
                 <MapPin size={14} /> Village Details
               </div>
-              <div className="p-4 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Village</label>
-                    <input type="text" value={village} onChange={e => setVillage(e.target.value)} placeholder="Enter village name" className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary" />
+              <div className="p-4 sm:p-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className={VILLAGE_FIELD_CLASS}>
+                    <label htmlFor="register-village" className={VILLAGE_LABEL_CLASS}>Village</label>
+                    <input id="register-village" type="text" value={village} onChange={e => setVillage(e.target.value)} placeholder="Enter village name" className={VILLAGE_INPUT_CLASS} />
                   </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Nearby Location / Landmark</label>
-                    <select value={nearbyLocation} onChange={e => setNearbyLocation(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary">
-                      <option value="">Select Nearby Location</option>
-                      {['Bus Stand', 'Railway Station', 'Highway', 'School', 'Hospital', 'Market'].map(loc => <option key={loc}>{loc}</option>)}
-                    </select>
+                  <div className={VILLAGE_FIELD_CLASS}>
+                    <label htmlFor="register-nearby-location" className={VILLAGE_LABEL_CLASS}>Nearby Location / Landmark</label>
+                    <div className="relative">
+                      <select
+                        id="register-nearby-location"
+                        value={nearbyLocation}
+                        onChange={e => setNearbyLocation(e.target.value)}
+                        className={`${VILLAGE_SELECT_CLASS} ${nearbyLocation ? 'text-gray-900' : 'text-gray-400'}`}
+                      >
+                        <option value="">Select Nearby Location</option>
+                        {NEARBY_LOCATION_OPTIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
+                      </select>
+                      <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden />
+                    </div>
+                    {nearbyLocation === 'Others' && (
+                      <div className="mt-3 animate-fade-in">
+                        <label htmlFor="register-custom-nearby" className={VILLAGE_LABEL_CLASS}>Add Nearby Location</label>
+                        <input id="register-custom-nearby" type="text" value={customNearby} onChange={e => setCustomNearby(e.target.value)} placeholder="Enter nearby location" className={VILLAGE_INPUT_CLASS} />
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Add Nearby Location</label>
-                    <input type="text" value={customNearby} onChange={e => setCustomNearby(e.target.value)} placeholder="Enter nearby location" className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary" />
+                  <div className={VILLAGE_FIELD_CLASS}>
+                    <label htmlFor="register-district" className={VILLAGE_LABEL_CLASS}>District</label>
+                    <input id="register-district" type="text" value={district} onChange={e => setDistrict(e.target.value)} placeholder="Enter district" className={VILLAGE_INPUT_CLASS} />
                   </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">District</label>
-                    <input type="text" value={district} onChange={e => setDistrict(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary" />
+                  <div className={VILLAGE_FIELD_CLASS}>
+                    <label htmlFor="register-mandal" className={VILLAGE_LABEL_CLASS}>Mandal</label>
+                    <input id="register-mandal" type="text" value={mandal} onChange={e => setMandal(e.target.value)} placeholder="Enter mandal" className={VILLAGE_INPUT_CLASS} />
                   </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Mandal</label>
-                    <input type="text" value={mandal} onChange={e => setMandal(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary" />
+                  <div className={VILLAGE_FIELD_CLASS}>
+                    <label htmlFor="register-panchayati" className={VILLAGE_LABEL_CLASS}>Panchayati</label>
+                    <input id="register-panchayati" type="text" value={panchayati} onChange={e => setPanchayati(e.target.value)} placeholder="Enter panchayati" className={VILLAGE_INPUT_CLASS} />
                   </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Panchayati</label>
-                    <input type="text" value={panchayati} onChange={e => setPanchayati(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary" />
+                  <div className={VILLAGE_FIELD_CLASS}>
+                    <label htmlFor="register-gvmc" className={VILLAGE_LABEL_CLASS}>GVMC Zone, Ward Number</label>
+                    <input id="register-gvmc" type="text" value={gvmc} onChange={e => setGvmc(e.target.value)} placeholder="Zone, ward number" className={VILLAGE_INPUT_CLASS} />
                   </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">GVMC Zone, Ward Number</label>
-                    <input type="text" value={gvmc} onChange={e => setGvmc(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary" />
+                  <div className={VILLAGE_FIELD_CLASS}>
+                    <label htmlFor="register-vmrda" className={VILLAGE_LABEL_CLASS}>VMRDA</label>
+                    <input id="register-vmrda" type="text" value={vmrda} onChange={e => setVmrda(e.target.value)} placeholder="Enter VMRDA" className={VILLAGE_INPUT_CLASS} />
                   </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">VMRDA</label>
-                    <input type="text" value={vmrda} onChange={e => setVmrda(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary" />
+                  <div className={VILLAGE_FIELD_CLASS}>
+                    <label htmlFor="register-reg-area" className={VILLAGE_LABEL_CLASS}>Registration Area</label>
+                    <input id="register-reg-area" type="text" value={regArea} onChange={e => setRegArea(e.target.value)} placeholder="Enter registration area" className={VILLAGE_INPUT_CLASS} />
                   </div>
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">Registration Area</label>
-                    <input type="text" value={regArea} onChange={e => setRegArea(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[11px] font-semibold text-gray-600 block mb-1">GVMC / VMRDA</label>
-                    <input type="text" value={gvmcVmrda} onChange={e => setGvmcVmrda(e.target.value)} className="w-full border border-gray-200 rounded-md px-3 py-2 text-[13px] outline-none focus:border-primary" />
+                  <div className={VILLAGE_FIELD_CLASS}>
+                    <label htmlFor="register-gvmc-vmrda" className={VILLAGE_LABEL_CLASS}>GVMC / VMRDA</label>
+                    <input id="register-gvmc-vmrda" type="text" value={gvmcVmrda} onChange={e => setGvmcVmrda(e.target.value)} placeholder="GVMC or VMRDA" className={VILLAGE_INPUT_CLASS} />
                   </div>
                 </div>
               </div>
             </div>
 
-            <div>
-              <label className="text-[12px] text-gray-500 block mb-1">Password</label>
+            <div className={FORM_FIELD_CLASS}>
+              <label htmlFor="register-password" className={FORM_LABEL_CLASS}>Password</label>
               <div className="relative">
-                <input type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" required className="w-full border-0 border-b-2 border-gray-200 py-2 pr-10 text-sm outline-none focus:border-primary bg-transparent placeholder:text-gray-400" />
+                <input id="register-password" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Min 6 characters" className={`${FORM_INPUT_CLASS} pr-10`} />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 bg-transparent border-0 cursor-pointer">
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <div>
-              <label className="text-[12px] text-gray-500 block mb-1">Confirm Password</label>
+            <div className={FORM_FIELD_CLASS}>
+              <label htmlFor="register-confirm-password" className={FORM_LABEL_CLASS}>Confirm Password</label>
               <div className="relative">
-                <input type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter password" required className="w-full border-0 border-b-2 border-gray-200 py-2 pr-10 text-sm outline-none focus:border-primary bg-transparent placeholder:text-gray-400" />
+                <input id="register-confirm-password" type={showConfirm ? 'text' : 'password'} value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="Re-enter password" className={`${FORM_INPUT_CLASS} pr-10`} />
                 <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 bg-transparent border-0 cursor-pointer">
                   {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            <div>
-              <label className="text-[12px] text-gray-500 block mb-1">Captcha</label>
-              <div className="flex items-center gap-3">
-                <span className="bg-gray-100 border border-gray-200 rounded-md px-4 py-2 text-sm font-bold text-gray-700 tracking-wide select-none">
+            <div className={FORM_FIELD_CLASS}>
+              <label htmlFor="register-captcha" className={FORM_LABEL_CLASS}>Captcha</label>
+              <div className={`flex items-center gap-3 ${captchaError ? 'rounded-lg border border-red-500 bg-red-50 p-2 -mx-2' : ''}`}>
+                <span className="inline-flex h-10 items-center bg-gray-100 border border-gray-200 rounded-lg px-4 text-[13px] font-bold text-gray-700 tracking-wide select-none">
                   {captchaA} + {captchaB} = ?
                 </span>
-                <input type="text" value={captchaAnswer} onChange={e => setCaptchaAnswer(e.target.value.replace(/\D/g, ''))} maxLength={2} placeholder="Answer" className="w-20 border-0 border-b-2 border-gray-200 py-2 text-sm text-center outline-none focus:border-primary bg-transparent placeholder:text-gray-400" />
+                <input
+                  ref={captchaRef}
+                  id="register-captcha"
+                  type="text"
+                  value={formData.captcha}
+                  onChange={e => {
+                    const next = { ...formData, captcha: e.target.value.replace(/\D/g, '') };
+                    setFormData(next);
+                    handleFieldChange('captcha', next);
+                  }}
+                  onBlur={() => handleBlur('captcha')}
+                  maxLength={2}
+                  placeholder="Answer"
+                  aria-invalid={captchaError ? true : undefined}
+                  aria-describedby={captchaError ? 'captcha-error' : undefined}
+                  className={`w-20 ${FORM_INPUT_CLASS} text-center ${captchaError ? 'border-red-500 bg-red-50' : ''}`}
+                />
               </div>
+              <FieldError id="captcha-error" message={captchaError} />
             </div>
 
-            <div className="flex items-start gap-2 pt-1">
-              <input type="checkbox" id="terms" checked={agreed} onChange={e => setAgreed(e.target.checked)} className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer" />
+            <div
+              ref={termsRef}
+              tabIndex={-1}
+              className={`flex items-start gap-2 pt-1 rounded-md outline-none ${termsError ? 'border border-red-500 bg-red-50 p-2 -mx-2' : ''}`}
+            >
+              <input
+                type="checkbox"
+                id="terms"
+                checked={formData.acceptedTerms}
+                onChange={e => {
+                  const next = { ...formData, acceptedTerms: e.target.checked };
+                  setFormData(next);
+                  handleFieldChange('acceptedTerms', next, true);
+                }}
+                onBlur={() => handleBlur('acceptedTerms')}
+                aria-invalid={termsError ? true : undefined}
+                aria-describedby={termsError ? 'terms-error' : undefined}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+              />
               <label htmlFor="terms" className="text-[12px] text-gray-600 leading-relaxed cursor-pointer">
                 I agree to the <a href="#" className="text-primary font-medium no-underline hover:underline">Terms & Conditions</a> and <a href="#" className="text-primary font-medium no-underline hover:underline">Privacy Policy</a>
               </label>
             </div>
+            <FieldError id="terms-error" message={termsError} />
 
-            <button type="submit" disabled={loading} className="w-full bg-red-700 text-white border-0 rounded-lg py-3 text-[15px] font-bold cursor-pointer hover:bg-red-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
-              {loading ? 'Creating Account...' : 'Create Account'}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full bg-red-700 text-white border-0 rounded-lg py-3 text-[15px] font-bold transition-colors ${isSubmitting ? 'opacity-60 cursor-wait' : 'cursor-pointer hover:bg-red-800'}`}
+            >
+              {isSubmitting ? 'Creating Account...' : 'Create Account'}
             </button>
           </form>
 
@@ -576,7 +1051,22 @@ export function RegisterPage() {
 
       {/* Toast */}
       {toast && (
-        <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[9999] sm:min-w-[280px] bg-white rounded-md shadow-lg border-l-4 px-4 py-3 flex items-center gap-2.5 text-[13px] animate-slide-down ${toast.type === 'success' ? 'border-green-600' : toast.type === 'danger' ? 'border-red-600' : 'border-amber-500'}`}>
+         // <div className={`fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-[9999] sm:min-w-[280px] bg-white rounded-md shadow-lg border-l-4 px-4 py-3 flex items-center gap-2.5 text-[13px] animate-slide-down ${toast.type === 'success' ? 'border-green-600' : toast.type === 'danger' ? 'border-red-600' : 'border-amber-500'}`}>
+        <div className={`fixed top-5 right-5 z-[99999]
+sm:min-w-[340px]
+sm:max-w-[420px]
+bg-white
+rounded-xl
+shadow-xl
+border-l-4
+px-5
+py-4
+flex
+items-center
+gap-3
+text-[13px]
+animate-slide-down
+${toast.type === 'success' ? 'border-green-600' : toast.type === 'danger' ? 'border-red-600' : 'border-amber-500'}`}>
           <span>{toast.msg}</span>
         </div>
       )}

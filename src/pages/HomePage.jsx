@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, CheckCircle, Shield, Users, Headphones, MapPin, Building, Home as HomeIcon, Map, ShoppingBag, Trees, Wrench, ArrowRight } from 'lucide-react';
-import { PropertyCard } from '../components/PropertyCard';
-import { villages, properties } from '../lib/data';
+import { Search, CheckCircle, Shield, Users, Headphones, MapPin, Building, Home as HomeIcon, Map, ShoppingBag, Trees, Wrench } from 'lucide-react';
+import { FeaturedPropertiesSection } from '../components/home/FeaturedPropertiesSection';
+import { SponsoredProjectsSection } from '../components/home/SponsoredProjectsSection';
+import { villages } from '../lib/data';
 
 export function HomePage() {
   return (
@@ -11,7 +12,8 @@ export function HomePage() {
       <StatsStrip />
       <NoticeBar />
       <CategoriesSection />
-      <FeaturedSection />
+      <FeaturedPropertiesSection />
+      <SponsoredProjectsSection />
       <WhyChooseUs />
       <AreasSection />
     </>
@@ -222,29 +224,6 @@ function CategoriesSection() {
               <div className="text-[11px] text-gray-500 mt-0.5">{c.count}</div>
             </Link>
           ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function FeaturedSection() {
-  const featured = properties.filter(p => p.featured);
-  return (
-    <section className="py-2 pb-12 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex justify-between items-end mb-6 flex-wrap gap-2">
-          <div>
-            <div className="text-[12px] font-bold uppercase tracking-wider text-accent mb-1">Handpicked</div>
-            <h3 className="text-2xl font-extrabold text-primary mb-1">Featured Properties</h3>
-            <p className="text-gray-500 text-sm">Verified properties across Visakhapatnam</p>
-          </div>
-          <Link to="/listings" className="text-accent font-semibold text-[13px] no-underline flex items-center gap-1 hover:underline">
-            View All <ArrowRight size={14} />
-          </Link>
-        </div>
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-          {featured.map(p => <PropertyCard key={p.id} property={p} />)}
         </div>
       </div>
     </section>

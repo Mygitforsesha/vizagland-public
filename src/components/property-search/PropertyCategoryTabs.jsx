@@ -4,10 +4,10 @@ import {
   Home as HomeIcon,
   FileText,
 } from 'lucide-react';
-import { properties } from '../../lib/data';
-import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { buildSearchPayload } from '../../lib/property-search/buildSearchPayload';
+import { ITEMS_PER_PAGE } from './usePropertySearch';
 import { horizontalScrollClassName } from './horizontalScroll';
+
 const categoryConfig = {
   Buy: { label: 'For Buy', icon: ShoppingCart },
   Sell: { label: 'For Sale', icon: Tag },
@@ -15,14 +15,21 @@ const categoryConfig = {
   Lease: { label: 'For Lease', icon: FileText },
 };
 
-const PropertyCategoryTabs = () => {
-  const [searchParams] = useSearchParams();
-  const [activeCategory, setActiveCategory] = useState(
-    searchParams.get('cat') || 'Buy'
-  );
+const PropertyCategoryTabs = ({ search }) => {
+  const {
+    searchFilters,
+    handleFilterChange,
+    categoryCounts,
+  } = search;
+
+  const activeCategory = searchFilters.listingType || 'Buy';
 
   function handleCategoryChange(cat) {
-    setActiveCategory(cat);
+    console.log(
+      'Search Payload:',
+      buildSearchPayload({ ...searchFilters, listingType: cat }, 1, ITEMS_PER_PAGE),
+    );
+    handleFilterChange('listingType', cat);
   }
 
   return (
@@ -30,7 +37,7 @@ const PropertyCategoryTabs = () => {
       {Object.keys(categoryConfig).map((cat) => {
         const config = categoryConfig[cat];
         const Icon = config.icon;
-        const count = properties.filter((p) => p.category === cat).length;
+        const count = categoryCounts[cat] ?? 0;
 
         return (
           <button

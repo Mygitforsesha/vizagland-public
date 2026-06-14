@@ -8,7 +8,7 @@ export function MobileFilterSheet({
   onClose,
   search,
 }) {
-  const { resetAdvancedFilters, applyFiltersAndClose, advancedActiveFilterCount } = search;
+  const { resetFilters, applyFiltersAndClose, advancedActiveFilterCount, filtersResetKey } = search;
 
   return (
     <OverlayPanel
@@ -43,13 +43,13 @@ export function MobileFilterSheet({
       </div>
 
       <div className="flex-1 overflow-y-auto bg-surface px-4 py-5">
-        <AdvancedFilterPanel {...getAdvancedFilterProps(search)} />
+        <AdvancedFilterPanel key={filtersResetKey} {...getAdvancedFilterProps(search)} />
       </div>
 
       <div className="sticky bottom-0 z-10 flex shrink-0 gap-3 border-t border-gray-100 bg-white px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
         <button
           type="button"
-          onClick={resetAdvancedFilters}
+          onClick={resetFilters}
           className="flex-1 cursor-pointer rounded-xl border border-gray-200 bg-white py-3.5 text-sm font-semibold text-primary hover:bg-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
           Reset Filters

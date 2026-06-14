@@ -1,11 +1,11 @@
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, Bed, Bath, Maximize, Calendar, Compass, Building, Phone, Mail, ArrowLeft, Share2, Heart, CheckCircle } from 'lucide-react';
-import { properties } from '../lib/data';
+import { resolvePropertyForDetails } from '../lib/resolvePropertyForDetails';
 import { VillageSearch } from '../components/VillageSearch';
 
 export function PropertyDetailsPage() {
   const { id } = useParams();
-  const property = properties.find(p => p.id === id);
+  const property = resolvePropertyForDetails(id);
 
   if (!property) {
     return (

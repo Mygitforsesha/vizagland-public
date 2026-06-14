@@ -1,6 +1,5 @@
 import { usePropertySearch } from '../components/property-search/usePropertySearch';
 import { useMediaQuery } from '../components/property-search/useMediaQuery';
-import { SearchToolbar } from '../components/property-search/SearchToolbar';
 import { FilterSidebar } from '../components/property-search/FilterSidebar';
 import { MoreFiltersDrawer } from '../components/property-search/MoreFiltersDrawer';
 import { MobileFilterSheet } from '../components/property-search/MobileFilterSheet';
@@ -11,6 +10,7 @@ import { PropertyGrid } from '../components/property-search/PropertyGrid';
 import { SearchPagination } from '../components/property-search/SearchPagination';
 import PropertyCategoryTabs from '../components/property-search/PropertyCategoryTabs';
 import { QuickFilterChips } from '@/components/property-search/QuickFilterChip';
+import { VillageSearchField } from '../components/property-search/VillageSearchField';
 
 
 
@@ -23,7 +23,6 @@ export function PropertySearchPage() {
     paginatedResults,
     totalPages,
     currentPage,
-    setCurrentPage,
     isLoading,
     activeFilterChips,
     moreFiltersOpen,
@@ -37,7 +36,7 @@ export function PropertySearchPage() {
     wishlist,
     toggleWishlist,
     resetFilters,
-    triggerLoading,
+    handlePageChange,
   } = search;
 
   function openFiltersPanel() {
@@ -48,28 +47,24 @@ export function PropertySearchPage() {
     }
   }
 
-  function handlePageChange(page) {
-    setCurrentPage(page);
-    triggerLoading();
-  }
-
-
-
-
   return (
     <>
       <MobileSearchBar search={search} onOpenFilters={openFiltersPanel} />
 
       <div className="bg-surface min-h-[calc(100vh-120px)] pb-20 lg:pb-8">
         <div className="max-w-7xl mx-auto px-4 pt-0 pb-4 lg:py-6">
-          <SearchToolbar
-            search={search}
-            onMoreFilters={() => setMoreFiltersOpen(true)}
-            onSearch={() => triggerLoading()}
-          />
-          <div className="mt-3 lg:mt-5 bg-white rounded-xl lg:rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="mt-3 lg:mt-0 bg-white rounded-xl lg:rounded-2xl border border-gray-200 shadow-sm">
             <div className="px-4 pt-1.5 pb-0 lg:px-6 lg:pt-3">
-              <PropertyCategoryTabs />
+              <div className="lg:flex lg:justify-between lg:items-center lg:gap-4">
+                <div className="min-w-0 flex-1">
+                  <PropertyCategoryTabs search={search} />
+                </div>
+                <VillageSearchField
+                  search={search}
+                  variant="desktop"
+                  className="hidden lg:block"
+                />
+              </div>
             </div>
 
             <div className="mx-4 lg:mx-6 border-t border-gray-100" />
@@ -84,17 +79,16 @@ export function PropertySearchPage() {
           </div>
 
           <div className="mt-3 lg:mt-6 flex gap-8 items-start">
-            <FilterSidebar search={search} />
+            <FilterSidebar
+              search={search}
+              onMoreFilters={() => setMoreFiltersOpen(true)}
+            />
 
             <div className="flex-1 min-w-0">
               <ResultsHeader
                 count={filtered.length}
                 sortBy={sortBy}
-                onSortChange={(value) => {
-                  setSortBy(value);
-                  setCurrentPage(1);
-                  triggerLoading();
-                }}
+                onSortChange={setSortBy}
                 viewMode={viewMode}
                 onViewModeChange={setViewMode}
                 activeFilterChips={activeFilterChips}
