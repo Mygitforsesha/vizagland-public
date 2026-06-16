@@ -3,6 +3,7 @@ export function getSidebarFilterProps(search) {
   const {
     searchFilters,
     updateSearchFilter,
+    handleFilterChange,
     districtOptions,
     mandalOptions,
     availablePropertyTypes,
@@ -15,6 +16,7 @@ export function getSidebarFilterProps(search) {
   return {
     searchFilters,
     updateSearchFilter,
+    handleFilterChange,
     districtOptions,
     mandalOptions,
     availablePropertyTypes,

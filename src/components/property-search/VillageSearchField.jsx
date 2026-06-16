@@ -29,6 +29,7 @@ export function VillageSearchField({ search, variant = 'mobile', className = '' 
     villageSuggestions,
     handleSelectVillage,
     clearLocationFilters,
+    commitLocationSearch,
   } = search;
 
   const inputRef = useRef(null);
@@ -51,6 +52,13 @@ export function VillageSearchField({ search, variant = 'mobile', className = '' 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [setShowVillageSuggestions]);
 
+  function handleSubmitSearch() {
+    const trimmed = villageQuery.trim();
+    if (!trimmed) return;
+    commitLocationSearch(trimmed);
+    setShowVillageSuggestions(false);
+  }
+
   return (
     <div className={`${styles.wrapper} ${className}`.trim()}>
       <Search
@@ -71,6 +79,12 @@ export function VillageSearchField({ search, variant = 'mobile', className = '' 
             clearLocationFilters();
           }
         }}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            handleSubmitSearch();
+          }
+        }}
         onFocus={() => setShowVillageSuggestions(true)}
         placeholder={styles.placeholder}
         className={styles.input}
@@ -81,7 +95,6 @@ export function VillageSearchField({ search, variant = 'mobile', className = '' 
         <button
           type="button"
           onClick={() => {
-            setVillageQuery('');
             clearLocationFilters();
           }}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 border-0 bg-transparent cursor-pointer p-0"

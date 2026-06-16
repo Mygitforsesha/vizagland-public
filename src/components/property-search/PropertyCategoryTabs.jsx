@@ -1,4 +1,5 @@
 import {
+  LayoutGrid,
   ShoppingCart,
   Tag,
   Home as HomeIcon,
@@ -8,7 +9,10 @@ import { buildSearchPayload } from '../../lib/property-search/buildSearchPayload
 import { ITEMS_PER_PAGE } from './usePropertySearch';
 import { horizontalScrollClassName } from './horizontalScroll';
 
+const CATEGORY_ORDER = ['All', 'Buy', 'Sell', 'Rent', 'Lease'];
+
 const categoryConfig = {
+  All: { label: 'All', icon: LayoutGrid },
   Buy: { label: 'For Buy', icon: ShoppingCart },
   Sell: { label: 'For Sale', icon: Tag },
   Rent: { label: 'For Rent', icon: HomeIcon },
@@ -22,19 +26,21 @@ const PropertyCategoryTabs = ({ search }) => {
     categoryCounts,
   } = search;
 
-  const activeCategory = searchFilters.listingType || 'Buy';
+  const activeCategory = searchFilters.listingType || 'All';
 
   function handleCategoryChange(cat) {
+    const listingType = cat === 'All' ? '' : cat;
+
     console.log(
       'Search Payload:',
-      buildSearchPayload({ ...searchFilters, listingType: cat }, 1, ITEMS_PER_PAGE),
+      buildSearchPayload({ ...searchFilters, listingType }, 1, ITEMS_PER_PAGE),
     );
     handleFilterChange('listingType', cat);
   }
 
   return (
     <div className={`flex items-center gap-0 lg:gap-1 ${horizontalScrollClassName}`}>
-      {Object.keys(categoryConfig).map((cat) => {
+      {CATEGORY_ORDER.map((cat) => {
         const config = categoryConfig[cat];
         const Icon = config.icon;
         const count = categoryCounts[cat] ?? 0;

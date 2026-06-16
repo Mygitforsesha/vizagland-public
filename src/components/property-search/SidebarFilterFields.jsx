@@ -13,6 +13,7 @@ import { toEmptySelectValue, withAllOption } from '@/components/post-property/fi
 export function SidebarFilterFields({
   searchFilters,
   updateSearchFilter,
+  handleFilterChange,
   districtOptions,
   mandalOptions,
   availablePropertyTypes,
@@ -31,6 +32,11 @@ export function SidebarFilterFields({
   }));
 
   function commitFilter(fieldName, value) {
+    if (fieldName === 'district' || fieldName === 'mandal') {
+      handleFilterChange(fieldName, value);
+      return;
+    }
+
     updateSearchFilter(fieldName, value);
     setCurrentPage(1);
     triggerLoading();

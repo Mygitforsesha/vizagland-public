@@ -34,6 +34,64 @@ export function filterPropertiesByLocation(
   return result;
 }
 
+function hasStructuredLocationFilter({
+  selectedVillage,
+  district,
+  mandal,
+  panchayati,
+}) {
+  return (
+    hasActiveLocationValue(selectedVillage)
+    || hasActiveLocationValue(district)
+    || hasActiveLocationValue(mandal)
+    || hasActiveLocationValue(panchayati)
+  );
+}
+
+/**
+ * Applies a free-text location keyword against village, district, mandal,
+ * panchayati, and title when structured location filters are not active.
+ */
+export function filterPropertiesBySearchKeyword(properties, query) {
+  const trimmed = typeof query === 'string' ? query.trim() : '';
+  if (!trimmed) return properties;
+
+  const lower = trimmed.toLowerCase();
+
+  return properties.filter((property) => {
+    const fields = [
+      property.village,
+      property.district,
+      property.mandal,
+      property.panchayati,
+      property.title,
+    ];
+
+    return fields.some(
+      (field) => typeof field === 'string' && field.toLowerCase().includes(lower),
+    );
+  });
+}
+
+export function applyLocationOrKeywordFilter(
+  properties,
+  searchFilters,
+  keywordQuery,
+) {
+  const locationFilters = {
+    selectedVillage: searchFilters.selectedVillage,
+    district: searchFilters.district,
+    mandal: searchFilters.mandal,
+    panchayati: searchFilters.panchayati,
+  };
+
+  if (hasStructuredLocationFilter(locationFilters)) {
+    return filterPropertiesByLocation(properties, locationFilters);
+  }
+
+  return filterPropertiesBySearchKeyword(properties, keywordQuery);
+}
+
 /**
  * Applies property group / type filters.
  * Empty arrays are ignored; a property matches when its value is in the selection.

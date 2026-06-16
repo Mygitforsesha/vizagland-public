@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Search, CheckCircle, Shield, Users, Headphones, MapPin, Building, Home as HomeIcon, Map, ShoppingBag, Trees, Wrench } from 'lucide-react';
 import { FeaturedPropertiesSection } from '../components/home/FeaturedPropertiesSection';
 import { SponsoredProjectsSection } from '../components/home/SponsoredProjectsSection';
 import { villages } from '../lib/data';
+import { buildSearchPageUrl } from '../lib/property-search/searchUrlSync';
 
 export function HomePage() {
   return (
@@ -21,6 +22,7 @@ export function HomePage() {
 }
 
 function HeroSection() {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [selectedVillage, setSelectedVillage] = useState(null);
@@ -50,10 +52,11 @@ function HeroSection() {
   }
 
   function handleSearch() {
-    if (!query.trim()) return;
-    const found = villages.find(v => v.name.toLowerCase().includes(query.toLowerCase()));
-    if (found) setSelectedVillage(found);
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
     setSuggestions([]);
+    navigate(buildSearchPageUrl(trimmed));
   }
 
   return (
@@ -99,7 +102,11 @@ function HeroSection() {
                     placeholder="Type village, city, or area name..."
                     className="flex-1 border border-gray-200 border-l-0 border-r-0 py-2.5 px-3 text-[13px] outline-none focus:ring-0"
                   />
-                  <button onClick={handleSearch} className="bg-accent text-white font-semibold text-[13px] px-4 rounded-r-md hover:bg-accent-hover transition-colors flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleSearch}
+                    className="bg-accent text-white font-semibold text-[13px] px-4 rounded-r-md hover:bg-accent-hover transition-colors flex items-center gap-1.5"
+                  >
                     <Search size={14} /> Search
                   </button>
                 </div>
@@ -148,10 +155,11 @@ function HeroSection() {
                 </div>
                 <div className="flex gap-2 mt-3">
                   <button
-                    onClick={() => { setSelectedVillage(null); setQuery(''); }}
+                    type="button"
+                    onClick={handleSearch}
                     className="bg-accent text-white text-[12px] font-semibold px-4 py-2 rounded flex items-center gap-1.5 hover:bg-accent-hover transition-colors border-0 cursor-pointer"
                   >
-                    <Search size={14} /> Search
+                    <Search size={14} /> Search Properties
                   </button>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   searchProperties,
   villageData,
@@ -10,13 +11,13 @@ import {
   propertyGroups,
 } from '../../lib/searchData';
 import {
+  applyLocationOrKeywordFilter,
   createInitialSearchFilters,
   filterPropertiesByArea,
   filterPropertiesByBuilding,
   filterPropertiesByFeatures,
   filterPropertiesByGroupAndType,
   filterPropertiesByListingType,
-  filterPropertiesByLocation,
   filterPropertiesByPrice,
   filterPropertiesByPropertyDetails,
   filterPropertiesByResidentialSpecs,
@@ -35,6 +36,14 @@ import {
   filterPropertiesByQuickFilters,
 } from '../../lib/property-search/quickFilterUtils';
 import { buildSearchPayload } from '../../lib/property-search/buildSearchPayload';
+import {
+  PAGE_QUERY_PARAM,
+  buildSyncableUrlUpdates,
+  getSyncableUrlSignature,
+  mergeSearchParams,
+  parseSyncableStateFromUrl,
+  resolveSearchQueryToFilters,
+} from '../../lib/property-search/searchUrlSync';
 
 export const ITEMS_PER_PAGE = 6;
 
@@ -201,10 +210,20 @@ function getAreaFilterLabel(areaUnit, minArea, maxArea) {
 }
 
 export function usePropertySearch() {
-  const [searchFilters, setSearchFilters] = useState(createInitialSearchFilters);
-  const [villageQuery, setVillageQuery] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialUrlState = parseSyncableStateFromUrl(searchParams, villageData);
+
+  const [searchFilters, setSearchFilters] = useState(() => ({
+    ...createInitialSearchFilters(),
+    listingType: initialUrlState.listingType,
+    district: initialUrlState.district,
+    mandal: initialUrlState.mandal,
+    selectedVillage: initialUrlState.selectedVillage,
+    panchayati: initialUrlState.panchayati,
+  }));
+  const [villageQuery, setVillageQuery] = useState(initialUrlState.villageQuery);
   const [showVillageSuggestions, setShowVillageSuggestions] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(initialUrlState.page);
   const [isLoading, setIsLoading] = useState(false);
   const [viewMode, setViewMode] = useState('grid');
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
@@ -214,6 +233,7 @@ export function usePropertySearch() {
 
   const villageInputRef = useRef(null);
   const suggestionsRef = useRef(null);
+  const syncedUrlSignatureRef = useRef(getSyncableUrlSignature(searchParams));
 
   const {
     selectedVillage,
@@ -268,6 +288,88 @@ export function usePropertySearch() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const writeSyncableUrl = useCallback((state, { replace = false } = {}) => {
+    setSearchParams((previous) => {
+      const next = mergeSearchParams(previous, buildSyncableUrlUpdates(state));
+      syncedUrlSignatureRef.current = getSyncableUrlSignature(next);
+      return next;
+    }, { replace });
+  }, [setSearchParams]);
+
+  useEffect(() => {
+    const signature = getSyncableUrlSignature(searchParams);
+    const urlState = parseSyncableStateFromUrl(searchParams, villageData);
+
+    if (syncedUrlSignatureRef.current !== signature) {
+      syncedUrlSignatureRef.current = signature;
+      setVillageQuery(urlState.villageQuery);
+      setSearchFilters((previous) => {
+        const next = {
+          ...previous,
+          listingType: urlState.listingType,
+          district: urlState.district,
+          mandal: urlState.mandal,
+          selectedVillage: urlState.selectedVillage,
+          panchayati: urlState.panchayati,
+        };
+
+        if (urlState.villageQuery || urlState.listingType) {
+          logSearchPayload(next, urlState.page);
+        }
+
+        return next;
+      });
+      setShowVillageSuggestions(false);
+    }
+
+    setCurrentPage((previous) => (previous === urlState.page ? previous : urlState.page));
+  }, [searchParams]);
+
+  function triggerLoading() {
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 400);
+  }
+
+  const resetToFirstPage = useCallback(() => {
+    setCurrentPage(1);
+    setSearchParams(
+      (previous) => {
+        const next = mergeSearchParams(previous, { [PAGE_QUERY_PARAM]: null });
+        syncedUrlSignatureRef.current = getSyncableUrlSignature(next);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
+
+  const commitLocationSearch = useCallback((rawQuery, { replace = false } = {}) => {
+    const trimmed = rawQuery.trim();
+    const { filters } = resolveSearchQueryToFilters(trimmed, villageData);
+
+    setVillageQuery(trimmed);
+    setSearchFilters((previous) => {
+      const next = {
+        ...previous,
+        ...filters,
+      };
+
+      logSearchPayload(next, 1);
+      return next;
+    });
+    setShowVillageSuggestions(false);
+    setCurrentPage(1);
+    triggerLoading();
+
+    writeSyncableUrl({
+      listingType: searchFilters.listingType,
+      district: filters.district,
+      mandal: filters.mandal,
+      selectedVillage: filters.selectedVillage,
+      villageQuery: trimmed,
+      page: 1,
+    }, { replace });
+  }, [searchFilters.listingType, writeSyncableUrl]);
 
   const updateSearchFilters = useCallback((partialFilters) => {
     setSearchFilters((previous) => ({
@@ -376,16 +478,36 @@ export function usePropertySearch() {
     [],
   );
 
-  function triggerLoading() {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 400);
-  }
-
   const handleFilterChange = useCallback((fieldName, value) => {
     updateSearchFilter(fieldName, value);
-    setCurrentPage(1);
     triggerLoading();
-  }, [updateSearchFilter]);
+
+    if (fieldName === 'listingType' || fieldName === 'district' || fieldName === 'mandal') {
+      const normalizedValue = typeof value === 'string' && value === 'All' ? '' : value;
+
+      setCurrentPage(1);
+      writeSyncableUrl({
+        listingType: fieldName === 'listingType' ? normalizedValue : searchFilters.listingType,
+        district: fieldName === 'district' ? normalizedValue : searchFilters.district,
+        mandal: fieldName === 'mandal' ? normalizedValue : searchFilters.mandal,
+        selectedVillage: searchFilters.selectedVillage,
+        villageQuery,
+        page: 1,
+      });
+      return;
+    }
+
+    resetToFirstPage();
+  }, [
+    updateSearchFilter,
+    resetToFirstPage,
+    writeSyncableUrl,
+    searchFilters.listingType,
+    searchFilters.district,
+    searchFilters.mandal,
+    searchFilters.selectedVillage,
+    villageQuery,
+  ]);
 
   function handlePropertyGroupChange(value) {
     const groups = Array.isArray(value)
@@ -398,53 +520,17 @@ export function usePropertySearch() {
       propertyGroup: groups,
       ...pickInitialFilters('propertyType', 'areaUnit', 'minArea', 'maxArea'),
     });
-    setCurrentPage(1);
+    resetToFirstPage();
     triggerLoading();
   }
 
   const handleSelectVillage = useCallback((village) => {
-    const locationUpdate = {
-      selectedVillage: village.name,
-      district: village.district || '',
-      mandal: village.mandal || '',
-      panchayati: village.panchayati || '',
-    };
-
-    console.log(
-      'Search Payload:',
-      buildSearchPayload({ ...searchFilters, ...locationUpdate }, 1, ITEMS_PER_PAGE),
-    );
-
-    setSearchFilters((previous) => ({
-      ...previous,
-      ...locationUpdate,
-    }));
-    setVillageQuery(village.name);
-    setShowVillageSuggestions(false);
-    setCurrentPage(1);
-    triggerLoading();
-  }, [searchFilters]);
+    commitLocationSearch(village.name);
+  }, [commitLocationSearch]);
 
   const clearLocationFilters = useCallback(() => {
-    const clearedLocation = pickInitialFilters(
-      'selectedVillage',
-      'district',
-      'mandal',
-      'panchayati',
-    );
-
-    console.log(
-      'Search Payload:',
-      buildSearchPayload({ ...searchFilters, ...clearedLocation }, 1, ITEMS_PER_PAGE),
-    );
-
-    setSearchFilters((previous) => ({
-      ...previous,
-      ...clearedLocation,
-    }));
-    setCurrentPage(1);
-    triggerLoading();
-  }, [searchFilters]);
+    commitLocationSearch('');
+  }, [commitLocationSearch]);
 
   const resetSearchFilters = useCallback(() => {
     setSearchFilters((previous) => {
@@ -463,20 +549,29 @@ export function usePropertySearch() {
     setCurrentPage(1);
     setFiltersResetKey((previous) => previous + 1);
     triggerLoading();
-  }, []);
+
+    writeSyncableUrl({
+      listingType: searchFilters.listingType,
+      district: '',
+      mandal: '',
+      selectedVillage: '',
+      villageQuery: '',
+      page: 1,
+    });
+  }, [searchFilters.listingType, writeSyncableUrl]);
 
   function applySidebarFilters() {
     logSearchPayload(searchFilters, currentPage);
-    setCurrentPage(1);
+    resetToFirstPage();
     triggerLoading();
   }
 
   const setSortBy = useCallback((value) => {
     updateSearchFilter('sortBy', value);
-    setCurrentPage(1);
+    resetToFirstPage();
     logSearchPayload({ ...searchFilters, sortBy: value }, 1);
     triggerLoading();
-  }, [updateSearchFilter, searchFilters]);
+  }, [updateSearchFilter, searchFilters, resetToFirstPage]);
 
   const toggleQuickFilter = useCallback((id) => {
     setSearchFilters((previous) => ({
@@ -485,16 +580,12 @@ export function usePropertySearch() {
         ? previous.quickFilters.filter((item) => item !== id)
         : [...previous.quickFilters, id],
     }));
-    setCurrentPage(1);
+    resetToFirstPage();
     triggerLoading();
-  }, []);
+  }, [resetToFirstPage]);
 
   const filteredBeforeQuickFilters = useMemo(() => {
     const {
-      selectedVillage: activeVillage,
-      district: activeDistrict,
-      mandal: activeMandal,
-      panchayati: activePanchayati,
       propertyGroup: activePropertyGroup,
       propertyType: activePropertyType,
       minPrice: activeMinPrice,
@@ -514,12 +605,7 @@ export function usePropertySearch() {
       amenities: activeAmenities,
     } = searchFilters;
 
-    let result = filterPropertiesByLocation(searchProperties, {
-      selectedVillage: activeVillage,
-      district: activeDistrict,
-      mandal: activeMandal,
-      panchayati: activePanchayati,
-    });
+    let result = applyLocationOrKeywordFilter(searchProperties, searchFilters, villageQuery);
 
     result = filterPropertiesByGroupAndType(result, {
       propertyGroup: activePropertyGroup,
@@ -560,7 +646,7 @@ export function usePropertySearch() {
     });
 
     return result;
-  }, [searchFilters]);
+  }, [searchFilters, villageQuery]);
 
   const filteredBeforeCategory = useMemo(() => {
     return filterPropertiesByQuickFilters(
@@ -569,7 +655,7 @@ export function usePropertySearch() {
     );
   }, [filteredBeforeQuickFilters, searchFilters.quickFilters]);
 
-  const activeListingType = searchFilters.listingType || 'Buy';
+  const activeListingType = searchFilters.listingType || '';
 
   const categoryCounts = useMemo(() => {
     const counts = Object.fromEntries(LISTING_CATEGORIES.map((category) => [category, 0]));
@@ -580,6 +666,8 @@ export function usePropertySearch() {
         counts[category] += 1;
       }
     });
+
+    counts.All = filteredBeforeCategory.length;
 
     return counts;
   }, [filteredBeforeCategory]);
@@ -605,18 +693,49 @@ export function usePropertySearch() {
 
   const removeFilterKeys = useCallback((...keys) => {
     updateSearchFilters(pickInitialFilters(...keys));
-    setCurrentPage(1);
     triggerLoading();
-  }, [updateSearchFilters]);
+
+    const clearsVillage = keys.includes('selectedVillage');
+    const clearsDistrict = keys.includes('district');
+    const clearsMandal = keys.includes('mandal');
+
+    if (clearsVillage || clearsDistrict || clearsMandal) {
+      if (clearsVillage) {
+        setVillageQuery('');
+      }
+
+      setCurrentPage(1);
+      writeSyncableUrl({
+        listingType: searchFilters.listingType,
+        district: clearsDistrict ? '' : searchFilters.district,
+        mandal: clearsMandal ? '' : searchFilters.mandal,
+        selectedVillage: clearsVillage ? '' : searchFilters.selectedVillage,
+        villageQuery: clearsVillage ? '' : villageQuery,
+        page: 1,
+      });
+      return;
+    }
+
+    resetToFirstPage();
+  }, [
+    updateSearchFilters,
+    resetToFirstPage,
+    writeSyncableUrl,
+    searchFilters.listingType,
+    searchFilters.district,
+    searchFilters.mandal,
+    searchFilters.selectedVillage,
+    villageQuery,
+  ]);
 
   const removeFilterArrayItem = useCallback((key, value) => {
     setSearchFilters((previous) => ({
       ...previous,
       [key]: previous[key].filter((item) => item !== value),
     }));
-    setCurrentPage(1);
+    resetToFirstPage();
     triggerLoading();
-  }, []);
+  }, [resetToFirstPage]);
 
   const activeFilterChips = useMemo(
     () =>
@@ -669,6 +788,15 @@ export function usePropertySearch() {
     logSearchPayload(searchFilters, page);
     setCurrentPage(page);
     triggerLoading();
+
+    writeSyncableUrl({
+      listingType: searchFilters.listingType,
+      district: searchFilters.district,
+      mandal: searchFilters.mandal,
+      selectedVillage: searchFilters.selectedVillage,
+      villageQuery,
+      page,
+    }, { replace: true });
   }
 
   return {
@@ -723,6 +851,7 @@ export function usePropertySearch() {
     handleFilterChange,
     handleSelectVillage,
     clearLocationFilters,
+    commitLocationSearch,
     toggleWishlist,
     applyFiltersAndClose,
     handlePageChange,
