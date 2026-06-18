@@ -50,7 +50,7 @@ export function SponsoredProjectCard({
 
   return (
     <motion.article
-      className="relative h-full min-h-[440px] overflow-hidden rounded-[24px] font-sans"
+      className="relative h-full min-h-[360px] overflow-hidden rounded-[24px] font-sans"
       initial="rest"
       animate="rest"
       whileHover="hover"
@@ -78,7 +78,7 @@ export function SponsoredProjectCard({
         aria-hidden
       />
 
-      <div className="relative z-10 flex min-h-[440px] h-full flex-col justify-between p-6 sm:p-8">
+      <div className="relative z-10 flex min-h-[360px] h-full flex-col justify-between p-5 sm:p-6">
         <span
           className={`inline-flex w-fit max-w-full rounded-full px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.14em] shadow-sm ${badgeClassName}`}
         >

@@ -53,31 +53,35 @@ function PropertyIdBadge({ id }) {
   );
 }
 
-function PropertySpecs({ property }) {
+function PropertySpecs({ property, compact = false }) {
   const hasBedBath = property.beds > 0 || property.baths > 0;
+  const specClass = compact
+    ? 'flex min-h-[36px] flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-gray-600'
+    : 'flex min-h-[52px] flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-600';
+  const iconSize = compact ? 12 : 14;
 
   if (hasBedBath || property.parking) {
     return (
-      <div className="flex min-h-[52px] flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-600">
+      <div className={specClass}>
         {property.beds > 0 && (
           <span className="inline-flex items-center gap-1.5 font-medium">
-            <Bed size={14} className="text-gray-400" aria-hidden />
+            <Bed size={iconSize} className="text-gray-400" aria-hidden />
             {property.beds} Beds
           </span>
         )}
         {property.baths > 0 && (
           <span className="inline-flex items-center gap-1.5 font-medium">
-            <Bath size={14} className="text-gray-400" aria-hidden />
+            <Bath size={iconSize} className="text-gray-400" aria-hidden />
             {property.baths} Baths
           </span>
         )}
         <span className="inline-flex items-center gap-1.5 font-medium">
-          <Maximize size={14} className="text-gray-400" aria-hidden />
+          <Maximize size={iconSize} className="text-gray-400" aria-hidden />
           {property.area}
         </span>
         {property.parking > 0 && (
           <span className="inline-flex items-center gap-1.5 font-medium">
-            <Car size={14} className="text-gray-400" aria-hidden />
+            <Car size={iconSize} className="text-gray-400" aria-hidden />
             {property.parking} Parking
           </span>
         )}
@@ -86,9 +90,9 @@ function PropertySpecs({ property }) {
   }
 
   return (
-    <div className="flex min-h-[52px] flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-gray-600">
+    <div className={specClass}>
       <span className="inline-flex items-center gap-1.5 font-medium">
-        <Maximize size={14} className="text-gray-400" aria-hidden />
+        <Maximize size={iconSize} className="text-gray-400" aria-hidden />
         {property.area}
       </span>
       {property.facing && (
@@ -104,14 +108,16 @@ export function PropertyCard({
   property,
   viewMode = 'grid',
   enableMotion = false,
+  size = 'default',
 }) {
   if (viewMode === 'list') {
     return <ListCard property={property} />;
   }
-  return <GridCard property={property} enableMotion={enableMotion} />;
+  return <GridCard property={property} enableMotion={enableMotion} size={size} />;
 }
 
-function GridCard({ property, enableMotion }) {
+function GridCard({ property, enableMotion, size = 'default' }) {
+  const isCompact = size === 'compact';
   const CardRoot = enableMotion ? motion.div : 'div';
   const ImageRoot = enableMotion ? motion.img : 'img';
 
@@ -132,6 +138,10 @@ function GridCard({ property, enableMotion }) {
       }
     : {};
 
+  const badgeOffset = isCompact ? 'top-2.5 left-2.5' : 'top-3 left-3';
+  const badgeSize = isCompact ? 'px-2.5 py-1 text-[9px]' : 'px-3 py-1.5 text-[10px]';
+  const verifiedOffset = isCompact ? 'top-2.5 right-2.5' : 'top-3 right-3';
+
   return (
     <CardRoot
       className={`flex h-full flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white ${
@@ -143,46 +153,54 @@ function GridCard({ property, enableMotion }) {
         <ImageRoot
           src={property.image}
           alt={property.title}
-          className="h-56 w-full object-cover"
+          className={`w-full object-cover ${isCompact ? 'h-[148px]' : 'h-56'}`}
           {...imageMotionProps}
         />
-        <CategoryBadge tag={property.tag} category={property.category} />
-        {property.verified && <VerifiedBadge />}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/45 to-transparent" />
+        <span
+          className={`absolute rounded-full font-bold uppercase tracking-[0.1em] text-white shadow-[0_4px_12px_rgba(0,31,84,0.25)] ${badgeOffset} ${badgeSize} ${categoryColors[property.category] || 'bg-teal'}`}
+        >
+          {property.tag}
+        </span>
+        {property.verified && (
+          <span className={`absolute flex items-center gap-1 rounded-full border border-white/70 bg-white/95 px-2 py-0.5 text-[9px] font-bold text-teal shadow-sm backdrop-blur-sm ${verifiedOffset}`}>
+            <BadgeCheck size={11} strokeWidth={2.5} aria-hidden />
+            Verified
+          </span>
+        )}
+        <div className={`pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/45 to-transparent ${isCompact ? 'h-10' : 'h-14'}`} />
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
-        <div className="mb-2 flex items-start justify-between gap-2">
-          <span className="text-xl font-extrabold leading-tight tracking-tight text-primary">
+      <div className={`flex flex-1 flex-col ${isCompact ? 'gap-2 p-3.5' : 'gap-0 p-4'}`}>
+        <div className="flex items-start justify-between gap-2">
+          <span className={`font-extrabold leading-tight tracking-tight text-primary ${isCompact ? 'text-base' : 'text-xl'}`}>
             {property.price}
           </span>
           <PropertyIdBadge id={property.id} />
         </div>
 
-        <h3 className="mb-2 line-clamp-2 min-h-[2.5rem] text-sm font-bold leading-snug text-gray-900">
+        <h3 className={`line-clamp-2 font-bold leading-snug text-gray-900 ${isCompact ? 'min-h-[2.25rem] text-[13px]' : 'mb-2 min-h-[2.5rem] text-sm'}`}>
           {property.title}
         </h3>
 
-        <p className="mb-3 flex items-start gap-1.5 text-xs leading-relaxed text-gray-600">
-          <MapPin size={13} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+        <p className={`flex items-start gap-1.5 leading-relaxed text-gray-600 ${isCompact ? 'text-[11px]' : 'mb-3 text-xs'}`}>
+          <MapPin size={isCompact ? 12 : 13} className="mt-0.5 shrink-0 text-accent" aria-hidden />
           <span className="line-clamp-2">
             {property.location}, {property.city}
           </span>
         </p>
 
-        <div className="mt-auto border-t border-gray-100 pt-3">
-          <PropertySpecs property={property} />
+        <div className={`mt-auto border-t border-gray-100 ${isCompact ? 'space-y-2.5 pt-3' : 'pt-3'}`}>
+          <PropertySpecs property={property} compact={isCompact} />
 
           {enableMotion ? (
             <motion.div
-              className="mt-3"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transition={{ duration: 0.2, ease: EASE_OUT }}
             >
               <Link
                 to={`/property/${property.id}`}
-                className="block w-full rounded-lg border border-primary bg-primary py-2.5 text-center text-xs font-bold text-white no-underline transition-colors duration-300 hover:border-accent hover:bg-accent"
+                className={`block w-full rounded-lg border border-primary bg-primary text-center font-bold text-white no-underline transition-colors duration-300 hover:border-accent hover:bg-accent ${isCompact ? 'py-2 text-[11px]' : 'py-2.5 text-xs'}`}
               >
                 View Details
               </Link>
@@ -190,7 +208,7 @@ function GridCard({ property, enableMotion }) {
           ) : (
             <Link
               to={`/property/${property.id}`}
-              className="mt-3 block w-full rounded-lg border border-primary bg-primary py-2.5 text-center text-xs font-bold text-white no-underline hover:bg-primary-dark"
+              className={`block w-full rounded-lg border border-primary bg-primary text-center font-bold text-white no-underline hover:bg-primary-dark ${isCompact ? 'py-2 text-[11px]' : 'py-2.5 text-xs'}`}
             >
               View Details
             </Link>

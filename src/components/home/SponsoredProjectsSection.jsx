@@ -50,10 +50,9 @@ export function SponsoredProjectsSection() {
   const headerVariants = getSectionHeaderMotion(reduceMotion);
 
   return (
-    <section className="overflow-hidden bg-surface pb-12 font-sans">
-      <div className="max-w-7xl mx-auto px-4">
+    <section className="overflow-hidden bg-surface pb-8 pt-1 font-sans">
         <motion.div
-          className="mb-6"
+          className="mb-4"
           variants={headerVariants}
           initial="hidden"
           whileInView="visible"
@@ -66,7 +65,7 @@ export function SponsoredProjectsSection() {
         </motion.div>
 
         <motion.div
-          className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-7"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:gap-5"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -82,7 +81,6 @@ export function SponsoredProjectsSection() {
             </motion.div>
           ))}
         </motion.div>
-      </div>
     </section>
   );
 }

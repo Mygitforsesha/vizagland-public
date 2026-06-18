@@ -73,6 +73,26 @@
   animation: slideInUp 0.3s ease;
 }
 
+@keyframes updatesMarquee {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+
+.updates-marquee-track {
+  animation: updatesMarquee 52s linear infinite;
+  will-change: transform;
+}
+
+.updates-marquee-container:hover .updates-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .updates-marquee-track {
+    animation: none;
+  }
+}
+
 @layer utilities {
   /* Hide scrollbars while preserving scroll (Chrome, Safari, Firefox, Edge) */
   .scrollbar-hide {

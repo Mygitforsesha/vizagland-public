@@ -136,11 +136,11 @@ function Navigation() {
 
 function Footer() {
   return (
-    <footer className="bg-primary-dark text-gray-400 pt-12">
+    <footer className="bg-primary-dark text-gray-400 pt-12 pb-4">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           <div>
-            <div className="flex items-center gap-3 mb-4">
+            <div className="mb-5 flex items-center gap-3">
               <div className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center text-white font-black text-sm">AP</div>
               <div>
                 <div className="text-white font-bold text-[15px]">AP Real Estate</div>
@@ -150,7 +150,7 @@ function Footer() {
             <p className="text-[13px] leading-relaxed">A trusted platform for buying, selling, and renting verified properties across Visakhapatnam GVMC &amp; VMRDA area.</p>
           </div>
           <div>
-            <h5 className="text-white text-sm font-bold mb-3 pb-2 border-b border-white/10">Quick Links</h5>
+            <h5 className="mb-4 border-b border-white/10 pb-2 text-sm font-bold text-white">Quick Links</h5>
             <ul className="list-none p-0 space-y-1">
               <li><Link to="/" className="text-gray-400 no-underline text-[13px] hover:text-white transition-colors">Home</Link></li>
               <li><Link to="/listings" className="text-gray-400 no-underline text-[13px] hover:text-white transition-colors">Properties</Link></li>
@@ -159,7 +159,7 @@ function Footer() {
             </ul>
           </div>
           <div>
-            <h5 className="text-white text-sm font-bold mb-3 pb-2 border-b border-white/10">Property Types</h5>
+            <h5 className="mb-4 border-b border-white/10 pb-2 text-sm font-bold text-white">Property Types</h5>
             <ul className="list-none p-0 space-y-1">
               <li><Link to="/listings?type=Apartment" className="text-gray-400 no-underline text-[13px] hover:text-white transition-colors">Apartments</Link></li>
               <li><Link to="/listings?type=Villa" className="text-gray-400 no-underline text-[13px] hover:text-white transition-colors">Villas</Link></li>
@@ -169,8 +169,8 @@ function Footer() {
             </ul>
           </div>
           <div>
-            <h5 className="text-white text-sm font-bold mb-3 pb-2 border-b border-white/10">Contact Us</h5>
-            <ul className="list-none p-0 space-y-2 text-[13px]">
+            <h5 className="mb-4 border-b border-white/10 pb-2 text-sm font-bold text-white">Contact Us</h5>
+            <ul className="list-none space-y-2.5 p-0 text-[13px]">
               <li className="flex items-start gap-2"><MapPin size={14} className="flex-shrink-0 mt-0.5" /> Vizag Land Office, Visakhapatnam - 530003</li>
               <li className="flex items-center gap-2"><Phone size={14} className="flex-shrink-0" /> 1800-425-4440 (Toll Free)</li>
               <li className="flex items-center gap-2"><Mail size={14} className="flex-shrink-0" /> support@aprealestate.in</li>
@@ -178,7 +178,7 @@ function Footer() {
           </div>
         </div>
       </div>
-      <div className="bg-navy mt-9 py-3.5 text-[12px] text-gray-500">
+      <div className="mt-10 bg-navy py-4 text-[12px] text-gray-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-2">
           <span>&copy; 2026 AP Real Estate Portal. All rights reserved.</span>
           <div className="flex gap-3">

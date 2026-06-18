@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Search, CheckCircle, Shield, Users, Headphones, MapPin, Building, Home as HomeIcon, Map, ShoppingBag, Trees, Wrench } from 'lucide-react';
 import { FeaturedPropertiesSection } from '../components/home/FeaturedPropertiesSection';
-import { SponsoredProjectsSection } from '../components/home/SponsoredProjectsSection';
+import { LatestUpdatesSection } from '../components/home/LatestUpdatesSection';
 import { villages } from '../lib/data';
 import { buildSearchPageUrl } from '../lib/property-search/searchUrlSync';
 
@@ -11,12 +11,20 @@ export function HomePage() {
     <>
       <HeroSection />
       <StatsStrip />
-      <NoticeBar />
-      <CategoriesSection />
-      <FeaturedPropertiesSection />
-      <SponsoredProjectsSection />
-      <WhyChooseUs />
-      <AreasSection />
+      <div className="max-w-7xl mx-auto px-4 pb-12 pt-8">
+        <NoticeBar />
+        <div className="mt-6 grid grid-cols-1 gap-8 lg:grid-cols-[1fr_380px] lg:items-start lg:gap-8">
+          <div className="min-w-0 space-y-12">
+            <CategoriesSection />
+            <FeaturedPropertiesSection />
+            <WhyChooseUs />
+            <AreasSection />
+          </div>
+          <aside className="min-w-0 lg:sticky lg:top-28 lg:self-start">
+            <LatestUpdatesSection />
+          </aside>
+        </div>
+      </div>
     </>
   );
 }
@@ -194,12 +202,10 @@ function StatsStrip() {
 
 function NoticeBar() {
   return (
-    <div className="bg-white border-b border-gray-200 py-2">
-      <div className="max-w-7xl mx-auto px-4 flex items-center gap-3">
-        <span className="bg-accent text-white text-[10px] font-bold px-2.5 py-0.5 rounded tracking-wide whitespace-nowrap">NOTICE</span>
-        <div className="text-[13px] text-gray-500 overflow-hidden whitespace-nowrap">
-          New property listings added daily &nbsp;&bull;&nbsp; Verified properties across Visakhapatnam &nbsp;&bull;&nbsp; Helpline: 1800-425-4440
-        </div>
+    <div className="flex items-center gap-3 border-b border-gray-200 bg-white py-2.5">
+      <span className="whitespace-nowrap rounded bg-accent px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-white">NOTICE</span>
+      <div className="overflow-hidden whitespace-nowrap text-[13px] text-gray-500">
+        New property listings added daily &nbsp;&bull;&nbsp; Verified properties across Visakhapatnam &nbsp;&bull;&nbsp; Helpline: 1800-425-4440
       </div>
     </div>
   );
@@ -216,23 +222,21 @@ function CategoriesSection() {
   ];
 
   return (
-    <section className="py-12">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-7">
-          <div className="text-[12px] font-bold uppercase tracking-wider text-accent mb-1">Browse by Category</div>
-          <h3 className="text-2xl font-extrabold text-primary">What Are You Looking For?</h3>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {categories.map(c => (
-            <Link key={c.name} to={`/listings${c.type ? `?type=${c.type}` : ''}`} className="bg-white border border-gray-200 rounded-xl p-5 text-center no-underline transition-all duration-200 hover:border-accent hover:shadow-lg hover:-translate-y-0.5 group">
-              <div className={`w-[52px] h-[52px] rounded-xl flex items-center justify-center mx-auto mb-2.5 ${c.bg}`}>
-                <c.icon size={22} className={c.color} />
-              </div>
-              <div className="text-[13px] font-bold text-primary">{c.name}</div>
-              <div className="text-[11px] text-gray-500 mt-0.5">{c.count}</div>
-            </Link>
-          ))}
-        </div>
+    <section>
+      <div className="mb-6 text-center">
+        <div className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-accent">Browse by Category</div>
+        <h3 className="text-2xl font-extrabold text-primary">What Are You Looking For?</h3>
+      </div>
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+        {categories.map(c => (
+          <Link key={c.name} to={`/listings${c.type ? `?type=${c.type}` : ''}`} className="group rounded-xl border border-gray-200 bg-white p-4 text-center no-underline transition-all duration-200 hover:-translate-y-0.5 hover:border-accent hover:shadow-lg">
+            <div className={`mx-auto mb-2.5 flex h-[48px] w-[48px] items-center justify-center rounded-xl ${c.bg}`}>
+              <c.icon size={20} className={c.color} />
+            </div>
+            <div className="text-[13px] font-bold text-primary">{c.name}</div>
+            <div className="mt-0.5 text-[11px] text-gray-500">{c.count}</div>
+          </Link>
+        ))}
       </div>
     </section>
   );
@@ -247,15 +251,14 @@ function WhyChooseUs() {
   ];
 
   return (
-    <section className="py-12 bg-white">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-6">
-          <div className="text-[12px] font-bold uppercase tracking-wider text-accent mb-1">Our Promise</div>
-          <h3 className="text-2xl font-extrabold text-primary">Why Choose AP Real Estate?</h3>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+    <section>
+      <div className="mb-6 text-center">
+        <div className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-accent">Our Promise</div>
+        <h3 className="text-2xl font-extrabold text-primary">Why Choose AP Real Estate?</h3>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
           {items.map(i => (
-            <div key={i.title} className="bg-white border border-gray-200 rounded-xl p-5 flex items-start gap-3.5 transition-shadow hover:shadow-md">
+            <div key={i.title} className="flex items-start gap-3.5 rounded-xl border border-gray-200 bg-white p-5 transition-shadow hover:shadow-md">
               <div className={`w-11 h-11 rounded-xl flex items-center justify-content-center flex-shrink-0 ${i.bg} flex items-center justify-center`}>
                 <i.icon size={20} className={i.color} />
               </div>
@@ -265,7 +268,6 @@ function WhyChooseUs() {
               </div>
             </div>
           ))}
-        </div>
       </div>
     </section>
   );
@@ -294,22 +296,20 @@ function AreasSection() {
   ];
 
   return (
-    <section className="py-12 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="mb-6">
-          <div className="text-[12px] font-bold uppercase tracking-wider text-accent mb-1">Explore</div>
-          <h3 className="text-2xl font-extrabold text-primary">Browse by Area</h3>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
+    <section className="pb-4">
+      <div className="mb-6">
+        <div className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-accent">Explore</div>
+        <h3 className="text-2xl font-extrabold text-primary">Browse by Area</h3>
+      </div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {areas.map(a => (
-            <Link key={a.name} to={`/listings?city=${a.name}`} className="bg-white border-2 border-gray-200 rounded-lg p-2 sm:p-3 text-center no-underline transition-all duration-200 hover:border-accent hover:bg-accent-light">
+            <Link key={a.name} to={`/listings?city=${a.name}`} className="rounded-lg border-2 border-gray-200 bg-white p-2.5 text-center no-underline transition-all duration-200 hover:border-accent hover:bg-accent-light sm:p-3">
               <div className="text-[11px] sm:text-[13px] font-bold text-primary flex items-center justify-center gap-1">
                 <MapPin size={11} className="text-accent flex-shrink-0" /> <span className="truncate">{a.name}</span>
               </div>
               <div className="text-[10px] sm:text-[11px] text-gray-500 mt-0.5">{a.count}</div>
             </Link>
           ))}
-        </div>
       </div>
     </section>
   );
