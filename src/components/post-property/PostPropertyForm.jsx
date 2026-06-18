@@ -15,11 +15,12 @@ export default function PostPropertyForm({
   updateField,
   dynamicAreaUnitOptions,
   onSubmitClick,
+  postMode = 'owner',
 }) {
   return (
     <div className={formContainerClass}>
       <PropertyApprovalSection formState={formState} updateField={updateField} />
-      <VillageDetailsSection formState={formState} updateField={updateField} />
+      <VillageDetailsSection formState={formState} updateField={updateField} postMode={postMode} />
       <PropertyGroupTypesSection formState={formState} updateField={updateField} />
       <PropertyDetailsSection
         formState={formState}

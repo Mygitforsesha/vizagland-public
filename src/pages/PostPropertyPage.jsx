@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { Building, Phone } from 'lucide-react';
 import PropertyLeadModal from '@/components/modals/PropertyLeadModal';
 import PropertySuccessModal from '@/components/modals/PropertySuccessModal';
 import PostPropertyForm from '@/components/post-property/PostPropertyForm';
+import PostModeToggle from '@/components/post-property/PostModeToggle';
 import { formHelpLinkClass, formPageClass } from '@/components/post-property/formStyles';
 import { usePostPropertyForm } from '@/lib/post-property/usePostPropertyForm';
 import { usePropertySubmissionFlow } from '@/lib/post-property/usePropertySubmissionFlow';
 
 export function PostPropertyPage() {
+  const [postMode, setPostMode] = useState('owner');
   const { formState, updateField, getFormState, dynamicAreaUnitOptions } = usePostPropertyForm();
 
   const {
@@ -23,12 +26,17 @@ export function PostPropertyPage() {
     <>
       <div className="bg-primary py-5">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-white text-xl font-bold m-0 flex items-center gap-2">
-            <Building size={20} /> Post Property
-          </h2>
-          <p className="text-blue-200 text-[13px] mt-1 mb-0">
-            List your property across Visakhapatnam GVMC &amp; VMRDA area
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-white text-xl font-bold m-0 flex items-center gap-2">
+                <Building size={20} /> Post Property
+              </h2>
+              <p className="text-blue-200 text-[13px] mt-1 mb-0">
+                List your property across Visakhapatnam GVMC &amp; VMRDA area
+              </p>
+            </div>
+            <PostModeToggle value={postMode} onChange={setPostMode} />
+          </div>
         </div>
       </div>
 
@@ -50,6 +58,7 @@ export function PostPropertyPage() {
           updateField={updateField}
           dynamicAreaUnitOptions={dynamicAreaUnitOptions}
           onSubmitClick={openLeadModal}
+          postMode={postMode}
         />
       </section>
 
