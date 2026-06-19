@@ -20,7 +20,6 @@ export function SidebarFilterFields({
   priceRanges,
   priceRange,
   setCurrentPage,
-  triggerLoading,
   onMoreFilters,
   advancedActiveFilterCount = 0,
 }) {
@@ -39,7 +38,6 @@ export function SidebarFilterFields({
 
     updateSearchFilter(fieldName, value);
     setCurrentPage(1);
-    triggerLoading();
   }
 
   return (

@@ -10,7 +10,6 @@ export function getSidebarFilterProps(search) {
     priceRanges,
     priceRange,
     setCurrentPage,
-    triggerLoading,
   } = search;
 
   return {
@@ -23,6 +22,5 @@ export function getSidebarFilterProps(search) {
     priceRanges,
     priceRange,
     setCurrentPage,
-    triggerLoading,
   };
 }

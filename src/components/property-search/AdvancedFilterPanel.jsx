@@ -28,7 +28,6 @@ export function AdvancedFilterPanel({
   availableAreaUnits,
   availablePropertyTypes,
   setCurrentPage,
-  triggerLoading,
 }) {
   const {
     propertyGroup,
@@ -52,13 +51,11 @@ export function AdvancedFilterPanel({
   function commitFilter(fieldName, value) {
     updateSearchFilter(fieldName, value);
     setCurrentPage(1);
-    triggerLoading();
   }
 
   function commitFilters(partialFilters) {
     updateSearchFilters(partialFilters);
     setCurrentPage(1);
-    triggerLoading();
   }
 
   return (

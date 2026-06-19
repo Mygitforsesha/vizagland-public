@@ -17,12 +17,9 @@ import {
   filterPropertiesByBuilding,
   filterPropertiesByFeatures,
   filterPropertiesByGroupAndType,
-  filterPropertiesByListingType,
   filterPropertiesByPrice,
   filterPropertiesByPropertyDetails,
   filterPropertiesByResidentialSpecs,
-  getPropertyListingCategory,
-  sortProperties,
 } from '../../lib/property-search/searchFilterUtils';
 import {
   ADVANCED_FILTER_KEYS,
@@ -36,6 +33,7 @@ import {
   filterPropertiesByQuickFilters,
 } from '../../lib/property-search/quickFilterUtils';
 import { buildSearchPayload } from '../../lib/property-search/buildSearchPayload';
+import { fetchPropertySearchResults } from '../../services/propertySearchService';
 import {
   PAGE_QUERY_PARAM,
   buildSyncableUrlUpdates,
@@ -47,13 +45,20 @@ import {
 
 export const ITEMS_PER_PAGE = 6;
 
-const LISTING_CATEGORIES = ['Buy', 'Sell', 'Rent', 'Lease'];
+const EMPTY_CATEGORY_COUNTS = {
+  All: 0,
+  Buy: 0,
+  Sell: 0,
+  Rent: 0,
+  Lease: 0,
+};
 
-function logSearchPayload(searchFilters, page) {
-  const payload = buildSearchPayload(searchFilters, page, ITEMS_PER_PAGE);
-  console.log('Search Payload:', payload);
-  return payload;
-}
+const EMPTY_PAGINATION = {
+  page: 1,
+  limit: ITEMS_PER_PAGE,
+  total: 0,
+  totalPages: 1,
+};
 
 function pickInitialFilters(...keys) {
   const initial = createInitialSearchFilters();
@@ -224,7 +229,11 @@ export function usePropertySearch() {
   const [villageQuery, setVillageQuery] = useState(initialUrlState.villageQuery);
   const [showVillageSuggestions, setShowVillageSuggestions] = useState(false);
   const [currentPage, setCurrentPage] = useState(initialUrlState.page);
+  const [properties, setProperties] = useState([]);
+  const [pagination, setPagination] = useState(EMPTY_PAGINATION);
+  const [categoryCounts, setCategoryCounts] = useState(EMPTY_CATEGORY_COUNTS);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('grid');
   const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -234,6 +243,7 @@ export function usePropertySearch() {
   const villageInputRef = useRef(null);
   const suggestionsRef = useRef(null);
   const syncedUrlSignatureRef = useRef(getSyncableUrlSignature(searchParams));
+  const searchRequestIdRef = useRef(0);
 
   const {
     selectedVillage,
@@ -314,10 +324,6 @@ export function usePropertySearch() {
           panchayati: urlState.panchayati,
         };
 
-        if (urlState.villageQuery || urlState.listingType) {
-          logSearchPayload(next, urlState.page);
-        }
-
         return next;
       });
       setShowVillageSuggestions(false);
@@ -326,10 +332,44 @@ export function usePropertySearch() {
     setCurrentPage((previous) => (previous === urlState.page ? previous : urlState.page));
   }, [searchParams]);
 
-  function triggerLoading() {
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 400);
-  }
+  const searchPayloadSignature = useMemo(
+    () => JSON.stringify(buildSearchPayload(searchFilters, currentPage, ITEMS_PER_PAGE)),
+    [searchFilters, currentPage],
+  );
+
+  useEffect(() => {
+    const requestId = searchRequestIdRef.current + 1;
+    searchRequestIdRef.current = requestId;
+    const payload = JSON.parse(searchPayloadSignature);
+
+    async function runSearch() {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await fetchPropertySearchResults(payload);
+
+        if (searchRequestIdRef.current !== requestId) return;
+
+        setProperties(result.properties);
+        setPagination(result.pagination);
+        setCategoryCounts(result.categoryCounts ?? EMPTY_CATEGORY_COUNTS);
+      } catch (searchError) {
+        if (searchRequestIdRef.current !== requestId) return;
+
+        setError(searchError);
+        setProperties([]);
+        setPagination(EMPTY_PAGINATION);
+        setCategoryCounts(EMPTY_CATEGORY_COUNTS);
+      } finally {
+        if (searchRequestIdRef.current === requestId) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    runSearch();
+  }, [searchPayloadSignature]);
 
   const resetToFirstPage = useCallback(() => {
     setCurrentPage(1);
@@ -354,12 +394,10 @@ export function usePropertySearch() {
         ...filters,
       };
 
-      logSearchPayload(next, 1);
       return next;
     });
     setShowVillageSuggestions(false);
     setCurrentPage(1);
-    triggerLoading();
 
     writeSyncableUrl({
       listingType: searchFilters.listingType,
@@ -480,7 +518,6 @@ export function usePropertySearch() {
 
   const handleFilterChange = useCallback((fieldName, value) => {
     updateSearchFilter(fieldName, value);
-    triggerLoading();
 
     if (fieldName === 'listingType' || fieldName === 'district' || fieldName === 'mandal') {
       const normalizedValue = typeof value === 'string' && value === 'All' ? '' : value;
@@ -521,7 +558,6 @@ export function usePropertySearch() {
       ...pickInitialFilters('propertyType', 'areaUnit', 'minArea', 'maxArea'),
     });
     resetToFirstPage();
-    triggerLoading();
   }
 
   const handleSelectVillage = useCallback((village) => {
@@ -540,15 +576,12 @@ export function usePropertySearch() {
         sortBy: previous.sortBy,
       };
 
-      console.log('Search Payload:', buildSearchPayload(next, 1, ITEMS_PER_PAGE));
-
       return next;
     });
     setVillageQuery('');
     setShowVillageSuggestions(false);
     setCurrentPage(1);
     setFiltersResetKey((previous) => previous + 1);
-    triggerLoading();
 
     writeSyncableUrl({
       listingType: searchFilters.listingType,
@@ -561,17 +594,13 @@ export function usePropertySearch() {
   }, [searchFilters.listingType, writeSyncableUrl]);
 
   function applySidebarFilters() {
-    logSearchPayload(searchFilters, currentPage);
     resetToFirstPage();
-    triggerLoading();
   }
 
   const setSortBy = useCallback((value) => {
     updateSearchFilter('sortBy', value);
     resetToFirstPage();
-    logSearchPayload({ ...searchFilters, sortBy: value }, 1);
-    triggerLoading();
-  }, [updateSearchFilter, searchFilters, resetToFirstPage]);
+  }, [updateSearchFilter, resetToFirstPage]);
 
   const toggleQuickFilter = useCallback((id) => {
     setSearchFilters((previous) => ({
@@ -581,7 +610,6 @@ export function usePropertySearch() {
         : [...previous.quickFilters, id],
     }));
     resetToFirstPage();
-    triggerLoading();
   }, [resetToFirstPage]);
 
   const filteredBeforeQuickFilters = useMemo(() => {
@@ -648,52 +676,20 @@ export function usePropertySearch() {
     return result;
   }, [searchFilters, villageQuery]);
 
-  const filteredBeforeCategory = useMemo(() => {
-    return filterPropertiesByQuickFilters(
-      filteredBeforeQuickFilters,
-      searchFilters.quickFilters,
-    );
-  }, [filteredBeforeQuickFilters, searchFilters.quickFilters]);
-
-  const activeListingType = searchFilters.listingType || '';
-
-  const categoryCounts = useMemo(() => {
-    const counts = Object.fromEntries(LISTING_CATEGORIES.map((category) => [category, 0]));
-
-    filteredBeforeCategory.forEach((property) => {
-      const category = getPropertyListingCategory(property);
-      if (Object.prototype.hasOwnProperty.call(counts, category)) {
-        counts[category] += 1;
-      }
-    });
-
-    counts.All = filteredBeforeCategory.length;
-
-    return counts;
-  }, [filteredBeforeCategory]);
-
-  const filtered = useMemo(() => {
-    const result = filterPropertiesByListingType(
-      filteredBeforeCategory,
-      activeListingType,
-    );
-    return sortProperties(result, searchFilters.sortBy);
-  }, [filteredBeforeCategory, activeListingType, searchFilters.sortBy]);
-
   const quickFilterChips = useMemo(
     () => buildQuickFilterChips(filteredBeforeQuickFilters, quickFilters),
     [filteredBeforeQuickFilters, quickFilters],
   );
 
-  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
-  const paginatedResults = filtered.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
+  const paginatedResults = useMemo(
+    () => filterPropertiesByQuickFilters(properties, quickFilters),
+    [properties, quickFilters],
   );
+
+  const totalPages = pagination.totalPages;
 
   const removeFilterKeys = useCallback((...keys) => {
     updateSearchFilters(pickInitialFilters(...keys));
-    triggerLoading();
 
     const clearsVillage = keys.includes('selectedVillage');
     const clearsDistrict = keys.includes('district');
@@ -734,7 +730,6 @@ export function usePropertySearch() {
       [key]: previous[key].filter((item) => item !== value),
     }));
     resetToFirstPage();
-    triggerLoading();
   }, [resetToFirstPage]);
 
   const activeFilterChips = useMemo(
@@ -778,16 +773,13 @@ export function usePropertySearch() {
   }
 
   function applyFiltersAndClose() {
-    logSearchPayload(searchFilters, currentPage);
+    resetToFirstPage();
     setMoreFiltersOpen(false);
     setMobileFiltersOpen(false);
-    triggerLoading();
   }
 
   function handlePageChange(page) {
-    logSearchPayload(searchFilters, page);
     setCurrentPage(page);
-    triggerLoading();
 
     writeSyncableUrl({
       listingType: searchFilters.listingType,
@@ -814,7 +806,10 @@ export function usePropertySearch() {
     setShowVillageSuggestions,
     currentPage,
     setCurrentPage,
+    properties,
+    pagination,
     isLoading,
+    error,
     sortBy,
     setSortBy,
     viewMode,
@@ -836,7 +831,6 @@ export function usePropertySearch() {
     panchayatOptions,
     propertyAges,
     furnishingOptions,
-    filtered,
     paginatedResults,
     totalPages,
     activeFilterChips,
@@ -847,7 +841,6 @@ export function usePropertySearch() {
     categoryCounts,
     filtersResetKey,
     toggleQuickFilter,
-    triggerLoading,
     handleFilterChange,
     handleSelectVillage,
     clearLocationFilters,

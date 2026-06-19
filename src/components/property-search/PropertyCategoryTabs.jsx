@@ -5,8 +5,6 @@ import {
   Home as HomeIcon,
   FileText,
 } from 'lucide-react';
-import { buildSearchPayload } from '../../lib/property-search/buildSearchPayload';
-import { ITEMS_PER_PAGE } from './usePropertySearch';
 import { horizontalScrollClassName } from './horizontalScroll';
 
 const CATEGORY_ORDER = ['All', 'Buy', 'Sell', 'Rent', 'Lease'];
@@ -29,12 +27,6 @@ const PropertyCategoryTabs = ({ search }) => {
   const activeCategory = searchFilters.listingType || 'All';
 
   function handleCategoryChange(cat) {
-    const listingType = cat === 'All' ? '' : cat;
-
-    console.log(
-      'Search Payload:',
-      buildSearchPayload({ ...searchFilters, listingType }, 1, ITEMS_PER_PAGE),
-    );
     handleFilterChange('listingType', cat);
   }
 

@@ -1,26 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Phone, Mail, MapPin, Clock, Building, Headphones, MessageSquare, Info, ChevronDown, ChevronUp, Send, RotateCcw } from 'lucide-react';
+import { useContactSubmission } from '@/lib/contact/useContactSubmission';
+import { fetchContactUs, getInitialContactUsView } from '@/services/contactUsService';
+
+const INITIAL_FORM_DATA = {
+  name: '',
+  mobile: '',
+  email: '',
+  subject: 'Property Enquiry',
+  propertyId: '',
+  district: '',
+  message: '',
+  consent: false,
+};
 
 export function ContactPage() {
-  const [formData, setFormData] = useState({ name: '', mobile: '', email: '', subject: 'Property Enquiry', propertyId: '', district: '', message: '', consent: false });
-  const [submitted, setSubmitted] = useState(false);
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [openFaq, setOpenFaq] = useState(null);
+  const [contactUs, setContactUs] = useState(getInitialContactUsView);
+  const { isSubmitting, submitted, submitEnquiry } = useContactSubmission();
 
-  function handleSubmit(e) {
+  useEffect(() => {
+    fetchContactUs().then(setContactUs);
+  }, []);
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    await submitEnquiry(formData, { onSuccess: resetForm });
   }
 
   function resetForm() {
-    setFormData({ name: '', mobile: '', email: '', subject: 'Property Enquiry', propertyId: '', district: '', message: '', consent: false });
+    setFormData(INITIAL_FORM_DATA);
   }
 
-  const faqs = [
-    { q: 'How do I verify if a property is genuine?', a: 'All properties on this portal are verified by our team before publishing. You can view property documents and approval details on each listing.' },
-    { q: 'How can an agent register on the portal?', a: 'Agents can register at this portal with their credentials for verification and approval by our team.' },
-    { q: 'Is there a fee to list properties on this portal?', a: 'Listing on Vizag Land is free for all verified agents. Citizens can browse and enquire at no cost.' },
-  ];
+  const { helpline, districtOffices, workingHours, faqs } = contactUs;
 
   return (
     <>
@@ -61,8 +74,8 @@ export function ContactPage() {
                       <Phone size={18} className="text-primary" />
                     </div>
                     <div>
-                      <div className="font-bold text-primary text-base">1234567989</div>
-                      <div className="text-[12px] text-gray-500">Toll Free - Mon-Fri 9AM-5:30PM</div>
+                      <div className="font-bold text-primary text-base">{helpline.phone}</div>
+                      <div className="text-[12px] text-gray-500">{helpline.phoneLabel}</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -70,8 +83,8 @@ export function ContactPage() {
                       <Mail size={18} className="text-primary" />
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-800 text-[13px]">support@aprealestate.ap.gov.in</div>
-                      <div className="text-[12px] text-gray-500">Response within 24 hours</div>
+                      <div className="font-semibold text-gray-800 text-[13px]">{helpline.email}</div>
+                      <div className="text-[12px] text-gray-500">{helpline.emailLabel}</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
@@ -79,8 +92,8 @@ export function ContactPage() {
                       <MapPin size={18} className="text-primary" />
                     </div>
                     <div>
-                      <div className="font-semibold text-gray-800 text-[13px]">Vizag Land Office</div>
-                      <div className="text-[12px] text-gray-500">Visakhapatnam - 530003</div>
+                      <div className="font-semibold text-gray-800 text-[13px]">{helpline.officeName}</div>
+                      <div className="text-[12px] text-gray-500">{helpline.address}</div>
                     </div>
                   </div>
                 </div>
@@ -97,7 +110,7 @@ export function ContactPage() {
                       <tr><th className="text-left px-4 py-2 font-semibold text-gray-600">District</th><th className="text-left px-4 py-2 font-semibold text-gray-600">Phone</th></tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {[['Hyderabad', '040-23456789'], ['Vijayawada', '0866-2345678'], ['Visakhapatnam', '0891-2345678'], ['Tirupati', '0877-2345678'], ['Guntur', '0863-2345678'], ['Nellore', '0861-2345678']].map(([d, p]) => (
+                      {districtOffices.map(([d, p]) => (
                         <tr key={d}><td className="px-4 py-2">{d}</td><td className="px-4 py-2 text-gray-600">{p}</td></tr>
                       ))}
                     </tbody>
@@ -111,7 +124,7 @@ export function ContactPage() {
                   <Clock size={14} /> Working Hours
                 </div>
                 <div className="p-4 space-y-2">
-                  {[['Mon - Fri', '9:00 AM - 5:30 PM', false], ['Saturday', '9:00 AM - 1:00 PM', false], ['Sunday', 'Closed', true], ['Holidays', 'Closed', true]].map(([day, time, red]) => (
+                  {workingHours.map(([day, time, red]) => (
                     <div key={day} className="flex justify-between items-center text-[13px]">
                       <span className="text-gray-600 font-medium">{day}</span>
                       <span className={red ? 'text-red-600 font-semibold' : 'text-gray-800 font-semibold'}>{time}</span>
@@ -151,8 +164,8 @@ export function ContactPage() {
                         <input type="tel" required value={formData.mobile} onChange={e => setFormData({ ...formData, mobile: e.target.value })} placeholder="10-digit mobile number" className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-[13px] outline-none focus:border-accent" />
                       </div>
                       <div>
-                        <label className="text-[12px] font-semibold text-gray-600 block mb-1">Email Address <span className="text-red-500">*</span></label>
-                        <input type="email" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="your@email.com" className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-[13px] outline-none focus:border-accent" />
+                        <label className="text-[12px] font-semibold text-gray-600 block mb-1">Email Address</label>
+                        <input type="email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} placeholder="your@email.com (optional)" className="w-full border border-gray-200 rounded-md px-3 py-2.5 text-[13px] outline-none focus:border-accent" />
                       </div>
                       <div>
                         <label className="text-[12px] font-semibold text-gray-600 block mb-1">Subject</label>
@@ -191,8 +204,8 @@ export function ContactPage() {
                         </label>
                       </div>
                       <div className="md:col-span-2 flex gap-2">
-                        <button type="submit" className="bg-primary text-white text-[13px] font-semibold px-5 py-2.5 rounded-md flex items-center gap-2 hover:bg-primary-dark transition-colors">
-                          <Send size={14} /> Submit Enquiry
+                        <button type="submit" disabled={isSubmitting} className="bg-primary text-white text-[13px] font-semibold px-5 py-2.5 rounded-md flex items-center gap-2 hover:bg-primary-dark transition-colors disabled:cursor-not-allowed disabled:opacity-60">
+                          <Send size={14} /> {isSubmitting ? 'Submitting...' : 'Submit Enquiry'}
                         </button>
                         <button type="button" onClick={resetForm} className="border border-gray-300 text-gray-600 text-[13px] font-semibold px-5 py-2.5 rounded-md flex items-center gap-2 hover:bg-gray-50 transition-colors">
                           <RotateCcw size={14} /> Reset

@@ -7,7 +7,6 @@ export function getAdvancedFilterProps(search) {
     availableAreaUnits,
     availablePropertyTypes,
     setCurrentPage,
-    triggerLoading,
   } = search;
 
   return {
@@ -17,6 +16,5 @@ export function getAdvancedFilterProps(search) {
     availableAreaUnits,
     availablePropertyTypes,
     setCurrentPage,
-    triggerLoading,
   };
 }

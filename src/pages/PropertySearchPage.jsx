@@ -19,8 +19,8 @@ export function PropertySearchPage() {
   const isDesktop = useMediaQuery('(min-width: 1024px)');
 
   const {
-    filtered,
     paginatedResults,
+    pagination,
     totalPages,
     currentPage,
     isLoading,
@@ -86,7 +86,7 @@ export function PropertySearchPage() {
 
             <div className="flex-1 min-w-0">
               <ResultsHeader
-                count={filtered.length}
+                count={pagination.total}
                 sortBy={sortBy}
                 onSortChange={setSortBy}
                 viewMode={viewMode}
@@ -98,7 +98,7 @@ export function PropertySearchPage() {
               <PropertyGrid
                 isLoading={isLoading}
                 results={paginatedResults}
-                totalCount={filtered.length}
+                totalCount={pagination.total}
                 viewMode={viewMode}
                 variant={isDesktop ? 'desktop' : 'mobile'}
                 wishlist={wishlist}
