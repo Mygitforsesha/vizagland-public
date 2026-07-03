@@ -1,4 +1,5 @@
 import { generateReferenceId } from './generateReferenceId';
+import { buildPropertyGroupAndTypesPayload } from './formOptions';
 
 // FUTURE:
 // Persist PropertyImages and PropertyDocuments metadata when media services are available.
@@ -62,14 +63,7 @@ export function buildPropertyPayload({ formState, customer, referenceId }) {
       property_authority: formState.gvmcVmrda ?? '',
     },
 
-    property_group_and_types: {
-      property_residential_type: formState.selectedResidential ?? '',
-      property_commercial_type: formState.selectedCommercial ?? '',
-      property_development_type: formState.selectedDevelopments ?? '',
-      property_layout_type: formState.selectedLayout ?? '',
-      property_construction_status: formState.selectedHouseDev ?? '',
-      property_construction_type: formState.selectedConstruction ?? '',
-    },
+    property_group_and_types: buildPropertyGroupAndTypesPayload(formState.propertyCategory),
 
     property_details: {
       property_price: formState.priceValue
@@ -104,6 +98,8 @@ export function buildPropertyPayload({ formState, customer, referenceId }) {
 
       property_plot_no: formState.plotNo ?? '',
 
+      property_flat_door_no: formState.propertyFlatDoorNo ?? '',
+
       property_year: formState.year
         ? Number(formState.year)
         : null,
@@ -121,6 +117,8 @@ export function buildPropertyPayload({ formState, customer, referenceId }) {
 
     property_other_services: {
       property_service_name: formState.selectedOtherService ?? '',
+      property_youtube_video_link: formState.youtubeVideoLink ?? '',
+      property_location_link: formState.propertyLocationLink ?? '',
     },
 
     // FUTURE:

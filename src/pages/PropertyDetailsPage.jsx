@@ -163,7 +163,7 @@ export function PropertyDetailsPage() {
                       <div className="text-[11px] text-gray-500">Verified Agent</div>
                     </div>
                   </div>
-                  <a href="tel:9030002266" className="flex items-center justify-center gap-2 w-full bg-teal text-white text-[13px] font-semibold py-2.5 rounded-lg no-underline hover:bg-teal/90 transition-colors">
+                  <a href="tel:9618170406" className="flex items-center justify-center gap-2 w-full bg-teal text-white text-[13px] font-semibold py-2.5 rounded-lg no-underline hover:bg-teal/90 transition-colors">
                     <Phone size={14} /> Call Now
                   </a>
                   <a href="mailto:info@aprealestate.in" className="flex items-center justify-center gap-2 w-full border border-gray-200 text-gray-700 text-[13px] font-semibold py-2.5 rounded-lg no-underline hover:bg-gray-50 transition-colors">

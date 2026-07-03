@@ -8,22 +8,39 @@ export const INITIAL_SEARCH_FILTERS = {
   district: '',
   mandal: '',
   panchayati: '',
+  nearbyLocation: '',
+  customNearby: '',
+  gvmc: '',
+  vmrda: '',
+  regArea: '',
+  gvmcVmrda: '',
 
   // Listing
   listingType: '',
 
-  // Property
+  // Property Group & Types
+  propertyCategory: '',
   propertyGroup: [],
   propertyType: [],
 
   // Price
   minPrice: '',
   maxPrice: '',
+  pricePerSqft: '',
+  priceValue: '',
+  propertyPriceRange: '',
 
   // Area
   minArea: '',
   maxArea: '',
   areaUnit: '',
+
+  // Property Details
+  lpNo: '',
+  year: '',
+  plotNo: '',
+  propertyFlatDoorNo: '',
+  propertyUnder: '',
 
   // Specifications
   bedrooms: '',
@@ -32,17 +49,20 @@ export const INITIAL_SEARCH_FILTERS = {
   parking: '',
   propertyAge: '',
   furnishing: '',
-  amenities: [],
 
   // Building Details
   totalFloors: '',
   floorNumber: '',
 
-  // Facing
+  // Facing & Approval
   facing: [],
-
-  // Approval
   approvedBy: [],
+
+  // Amenities
+  amenities: [],
+
+  // Other Services
+  selectedOtherService: '',
 
   // Quick filters (Verified, Flats, Villas, Plots, Commercial)
   quickFilters: [],

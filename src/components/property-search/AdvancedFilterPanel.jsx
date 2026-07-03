@@ -1,22 +1,32 @@
 import FormTextField from '@/components/post-property/FormTextField';
+import PropertyTypeSelectField from '@/components/post-property/PropertyTypeSelectField';
+import SearchableSelectField from '@/components/post-property/SearchableSelectField';
 import {
   AmenitiesMultiSelect,
+  ApprovalField,
   AreaUnitSelectField,
   BalconiesSelectField,
   BathroomsSelectField,
   BedroomsSelectField,
+  FacingField,
   FloorNumberSelectField,
   FurnishingSelectField,
   ParkingSelectField,
   PropertyAgeSelectField,
-  PropertyGroupMultiSelectField,
-  PropertyTypeMultiSelectField,
   TotalFloorsSelectField,
 } from '@/components/post-property/fields';
-import { ApprovalFilterField } from './ApprovalFilterField';
-import { FacingFilterField } from './FacingFilterField';
 import { FilterPanelSection } from './FilterPanelSection';
 import { filterPanelStackClass } from './filterPanelStyles';
+import {
+  lpPlotOptions,
+  nearbyLocationOptions,
+  otherServiceOptions,
+  pricePerSqftOptions,
+  priceRangeOptions,
+  propertyCategoryOptions,
+  propertyUnderOptions,
+  yearOptions,
+} from '@/lib/post-property/formOptions';
 
 /**
  * Advanced search filters — MoreFiltersDrawer / MobileFilterSheet.
@@ -24,14 +34,26 @@ import { filterPanelStackClass } from './filterPanelStyles';
 export function AdvancedFilterPanel({
   searchFilters,
   updateSearchFilter,
-  updateSearchFilters,
   availableAreaUnits,
-  availablePropertyTypes,
   setCurrentPage,
 }) {
   const {
-    propertyGroup,
-    propertyType,
+    propertyCategory,
+    nearbyLocation,
+    customNearby,
+    panchayati,
+    gvmc,
+    vmrda,
+    regArea,
+    gvmcVmrda,
+    lpNo,
+    year,
+    pricePerSqft,
+    priceValue,
+    propertyPriceRange,
+    plotNo,
+    propertyFlatDoorNo,
+    propertyUnder,
     propertyAge,
     furnishing,
     bedrooms,
@@ -46,6 +68,7 @@ export function AdvancedFilterPanel({
     facing,
     approvedBy,
     amenities,
+    selectedOtherService,
   } = searchFilters;
 
   function commitFilter(fieldName, value) {
@@ -53,51 +76,191 @@ export function AdvancedFilterPanel({
     setCurrentPage(1);
   }
 
-  function commitFilters(partialFilters) {
-    updateSearchFilters(partialFilters);
-    setCurrentPage(1);
-  }
-
   return (
     <div className={filterPanelStackClass}>
-      <FilterPanelSection title="Property Details">
-        <PropertyGroupMultiSelectField
-          value={propertyGroup}
-          onChange={(values) =>
-            commitFilters({
-              propertyGroup: values,
-              propertyType: [],
-              areaUnit: '',
-              minArea: '',
-              maxArea: '',
-            })
-          }
-        />
-        <PropertyTypeMultiSelectField
-          className="lg:hidden"
-          value={propertyType}
-          onChange={(values) => commitFilter('propertyType', values)}
-          options={availablePropertyTypes}
-        />
-        <PropertyAgeSelectField
-          value={propertyAge}
-          onValueChange={(value) => commitFilter('propertyAge', value)}
-          allowAll
-        />
-        <FurnishingSelectField
-          value={furnishing}
-          onValueChange={(value) => commitFilter('furnishing', value)}
-          allowAll
+      <FilterPanelSection title="Property Group & Types">
+        <SearchableSelectField
+          label="Property Category"
+          placeholder="Select Property Category"
+          searchPlaceholder="Search property category..."
+          value={propertyCategory}
+          onValueChange={(value) => commitFilter('propertyCategory', value)}
+          options={propertyCategoryOptions}
+          clearable
         />
       </FilterPanelSection>
 
-      <FilterPanelSection title="Residential Details">
-        <div className="grid grid-cols-2 gap-3">
+      <FilterPanelSection title="Location">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <FormTextField
+            label="Panchayati / sachivalayam"
+            value={panchayati}
+            onChange={(event) => updateSearchFilter('panchayati', event.target.value)}
+            placeholder="Enter panchayati"
+          />
+          <PropertyTypeSelectField
+            label="Nearby Location / Landmark"
+            placeholder="Select Nearby Location"
+            value={nearbyLocation}
+            onValueChange={(value) => commitFilter('nearbyLocation', value)}
+            options={nearbyLocationOptions}
+          />
+          <FormTextField
+            label="Add Nearby Location"
+            value={customNearby}
+            onChange={(event) => updateSearchFilter('customNearby', event.target.value)}
+            placeholder="Enter nearby location"
+          />
+          <FormTextField
+            label="GVMC Zone, Ward Number"
+            value={gvmc}
+            onChange={(event) => updateSearchFilter('gvmc', event.target.value)}
+            placeholder="Enter GVMC zone / ward"
+          />
+          <FormTextField
+            label="VMRDA"
+            value={vmrda}
+            onChange={(event) => updateSearchFilter('vmrda', event.target.value)}
+            placeholder="Enter VMRDA"
+          />
+          <FormTextField
+            label="Register office location"
+            value={regArea}
+            onChange={(event) => updateSearchFilter('regArea', event.target.value)}
+            placeholder="Enter register office"
+          />
+          <FormTextField
+            label="GVMC / VMRDA"
+            value={gvmcVmrda}
+            onChange={(event) => updateSearchFilter('gvmcVmrda', event.target.value)}
+            placeholder="Enter GVMC / VMRDA"
+          />
+        </div>
+      </FilterPanelSection>
+
+      <FilterPanelSection title="Property Details">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <SearchableSelectField
+            label="LP Number"
+            placeholder="Select LP Number"
+            searchPlaceholder="Search LP Number..."
+            value={lpNo}
+            onValueChange={(value) => commitFilter('lpNo', value)}
+            options={lpPlotOptions}
+            clearable
+          />
+          <SearchableSelectField
+            label="LP No. Year"
+            placeholder="Select LP No. Year"
+            searchPlaceholder="Search LP No. Year..."
+            value={year}
+            onValueChange={(value) => commitFilter('year', value)}
+            options={yearOptions}
+            clearable
+          />
+          <PropertyTypeSelectField
+            label="Price per Sq Ft"
+            placeholder="Select"
+            value={pricePerSqft}
+            onValueChange={(value) => commitFilter('pricePerSqft', value)}
+            options={pricePerSqftOptions}
+          />
+          <FormTextField
+            label="Price (Value)"
+            type="number"
+            value={priceValue}
+            onChange={(event) => updateSearchFilter('priceValue', event.target.value)}
+            placeholder="Enter value"
+          />
+          <PropertyTypeSelectField
+            label="Price Range"
+            placeholder="Select Price"
+            value={propertyPriceRange}
+            onValueChange={(value) => commitFilter('propertyPriceRange', value)}
+            options={priceRangeOptions}
+          />
+          <FormTextField
+            label="Area"
+            type="number"
+            value={minArea}
+            onChange={(event) => updateSearchFilter('minArea', event.target.value)}
+            placeholder="Min area"
+          />
+          <FormTextField
+            label="Max Area"
+            type="number"
+            value={maxArea}
+            onChange={(event) => updateSearchFilter('maxArea', event.target.value)}
+            placeholder="Max area"
+          />
+          <AreaUnitSelectField
+            value={areaUnit}
+            onValueChange={(value) => updateSearchFilter('areaUnit', value)}
+            options={availableAreaUnits}
+            allowAll
+          />
+          <TotalFloorsSelectField
+            value={totalFloors}
+            onValueChange={(value) => commitFilter('totalFloors', value)}
+            allowAll
+          />
+          <FloorNumberSelectField
+            value={floorNumber}
+            onValueChange={(value) => commitFilter('floorNumber', value)}
+            allowAll
+          />
+          <PropertyAgeSelectField
+            value={propertyAge}
+            onValueChange={(value) => commitFilter('propertyAge', value)}
+            allowAll
+          />
+          <FormTextField
+            label="Flat No./Door No."
+            value={propertyFlatDoorNo}
+            onChange={(event) => updateSearchFilter('propertyFlatDoorNo', event.target.value)}
+            placeholder="Enter flat or door number"
+          />
           <BedroomsSelectField
             value={bedrooms}
             onValueChange={(value) => commitFilter('bedrooms', value)}
             allowAll
           />
+          <FacingField
+            allowAll
+            value={Array.isArray(facing) ? facing[0] ?? '' : facing}
+            onValueChange={(value) => commitFilter('facing', value && value !== 'All' ? [value] : [])}
+          />
+          <SearchableSelectField
+            label="Plot No."
+            placeholder="Select Plot No."
+            searchPlaceholder="Search Plot No..."
+            value={plotNo}
+            onValueChange={(value) => commitFilter('plotNo', value)}
+            options={lpPlotOptions}
+            clearable
+          />
+          <FurnishingSelectField
+            value={furnishing}
+            onValueChange={(value) => commitFilter('furnishing', value)}
+            allowAll
+          />
+          <PropertyTypeSelectField
+            label="Property Under"
+            placeholder="Select"
+            value={propertyUnder}
+            onValueChange={(value) => commitFilter('propertyUnder', value)}
+            options={propertyUnderOptions}
+          />
+          <ApprovalField
+            allowAll
+            value={Array.isArray(approvedBy) ? approvedBy[0] ?? '' : approvedBy}
+            onValueChange={(value) => commitFilter('approvedBy', value && value !== 'All' ? [value] : [])}
+          />
+        </div>
+      </FilterPanelSection>
+
+      <FilterPanelSection title="Residential Details">
+        <div className="grid grid-cols-2 gap-3">
           <BathroomsSelectField
             value={bathrooms}
             onValueChange={(value) => commitFilter('bathrooms', value)}
@@ -116,64 +279,13 @@ export function AdvancedFilterPanel({
         </div>
       </FilterPanelSection>
 
-      <FilterPanelSection
-        title="Area"
-        trailing={
-          minArea || maxArea ? (
-            <span className="text-xs font-medium text-gray-500 normal-case tracking-normal">
-              {minArea || '0'} – {maxArea || '5000+'}
-            </span>
-          ) : null
-        }
-      >
-        <div className="grid grid-cols-2 gap-3">
-          <FormTextField
-            label="Min Area"
-            type="number"
-            value={minArea}
-            onChange={(event) => updateSearchFilter('minArea', event.target.value)}
-            placeholder="100"
-          />
-          <FormTextField
-            label="Max Area"
-            type="number"
-            value={maxArea}
-            onChange={(event) => updateSearchFilter('maxArea', event.target.value)}
-            placeholder="5000"
-          />
-        </div>
-        <AreaUnitSelectField
-          value={areaUnit}
-          onValueChange={(value) => updateSearchFilter('areaUnit', value)}
-          options={availableAreaUnits}
-          allowAll
-        />
-      </FilterPanelSection>
-
-      <FilterPanelSection title="Building">
-        <TotalFloorsSelectField
-          value={totalFloors}
-          onValueChange={(value) => commitFilter('totalFloors', value)}
-          allowAll
-        />
-        <FloorNumberSelectField
-          value={floorNumber}
-          onValueChange={(value) => commitFilter('floorNumber', value)}
-          allowAll
-        />
-      </FilterPanelSection>
-
-      <FilterPanelSection title="Facing">
-        <FacingFilterField
-          value={facing}
-          onChange={(values) => commitFilter('facing', values)}
-        />
-      </FilterPanelSection>
-
-      <FilterPanelSection title="Approvals">
-        <ApprovalFilterField
-          value={approvedBy}
-          onChange={(values) => commitFilter('approvedBy', values)}
+      <FilterPanelSection title="Other Services">
+        <PropertyTypeSelectField
+          label="Property Service"
+          placeholder="Select service"
+          value={selectedOtherService}
+          onValueChange={(value) => commitFilter('selectedOtherService', value)}
+          options={otherServiceOptions}
         />
       </FilterPanelSection>
 

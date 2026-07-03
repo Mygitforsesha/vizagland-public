@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const CONTACT_ENQUIRIES_API_URL =
-  'https://trapezoid-reprimand-registry.ngrok-free.dev/api/public/contact-enquiries';
+  'https://api.vizagland.com/api/public/contact-enquiries';
 
 function showContactToast(message, type = 'danger') {
   const existing = document.getElementById('contact-enquiry-toast');

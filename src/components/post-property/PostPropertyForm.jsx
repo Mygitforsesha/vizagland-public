@@ -1,5 +1,4 @@
 import { Send } from 'lucide-react';
-import PropertyApprovalSection from './sections/PropertyApprovalSection';
 import VillageDetailsSection from './sections/VillageDetailsSection';
 import PropertyGroupTypesSection from './sections/PropertyGroupTypesSection';
 import PropertyDetailsSection from './sections/PropertyDetailsSection';
@@ -19,7 +18,6 @@ export default function PostPropertyForm({
 }) {
   return (
     <div className={formContainerClass}>
-      <PropertyApprovalSection formState={formState} updateField={updateField} />
       <VillageDetailsSection formState={formState} updateField={updateField} postMode={postMode} />
       <PropertyGroupTypesSection formState={formState} updateField={updateField} />
       <PropertyDetailsSection

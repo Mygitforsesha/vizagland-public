@@ -1,11 +1,12 @@
 import { SlidersHorizontal } from 'lucide-react';
+import SearchableSelectField from '@/components/post-property/SearchableSelectField';
 import {
   BudgetSelectField,
   DistrictSelectField,
   MandalSelectField,
-  PropertyTypeMultiSelectField,
 } from '@/components/post-property/fields';
 import { toEmptySelectValue, withAllOption } from '@/components/post-property/fields/selectFieldUtils';
+import { propertyCategoryOptions } from '@/lib/post-property/formOptions';
 
 /**
  * Essential search filters — desktop sidebar only.
@@ -16,14 +17,13 @@ export function SidebarFilterFields({
   handleFilterChange,
   districtOptions,
   mandalOptions,
-  availablePropertyTypes,
   priceRanges,
   priceRange,
   setCurrentPage,
   onMoreFilters,
   advancedActiveFilterCount = 0,
 }) {
-  const { district, mandal, propertyType } = searchFilters;
+  const { district, mandal, propertyCategory } = searchFilters;
 
   const budgetOptions = priceRanges.map((range, index) => ({
     label: range.label,
@@ -54,10 +54,14 @@ export function SidebarFilterFields({
         options={withAllOption(mandalOptions, 'All Mandals')}
       />
 
-      <PropertyTypeMultiSelectField
-        value={propertyType}
-        onChange={(values) => commitFilter('propertyType', values)}
-        options={availablePropertyTypes}
+      <SearchableSelectField
+        label="Property Category"
+        placeholder="Select Property Category"
+        searchPlaceholder="Search property category..."
+        value={propertyCategory}
+        onValueChange={(value) => commitFilter('propertyCategory', value)}
+        options={propertyCategoryOptions}
+        clearable
       />
 
       <BudgetSelectField

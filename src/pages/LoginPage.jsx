@@ -2,8 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { CheckCircle, Shield, Users, Headphones, Eye, EyeOff, RefreshCw, Phone, AlertCircle } from 'lucide-react';
+import { captureUserLocation } from '@/services/locationService';
+import { getAuthenticatedRedirectUrl, getPostLoginRoute, saveAuthSession } from '@/lib/auth';
+import { ROUTES } from '@/constants/routes';
 
-const LOGIN_API_URL = 'https://trapezoid-reprimand-registry.ngrok-free.dev/api/auth/login';
+const LOGIN_API_URL = 'https://api.vizagland.com/api/auth/login';
+const LOGIN_SUCCESS_REDIRECT_MS = 1200;
 
 function generateCaptcha() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -43,6 +47,13 @@ export function LoginPage() {
   const [toast, setToast] = useState(null);
   const [errors, setErrors] = useState({ mobile: '', password: '', captcha: '' });
   const toastTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    const redirectUrl = getAuthenticatedRedirectUrl();
+    if (redirectUrl) {
+      window.location.replace(redirectUrl);
+    }
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -99,9 +110,11 @@ export function LoginPage() {
 
     setLoading(true);
     try {
+      const locationPayload = await captureUserLocation();
       const payload = {
         user_phone: mobile,
         user_password: password,
+        ...locationPayload,
       };
 
       console.log("Login Payload:", payload);
@@ -119,19 +132,22 @@ export function LoginPage() {
       const user = loginData.user;
       const token = loginData.token;
       const tokenType = loginData.token_type;
+      const redirectUrl = getPostLoginRoute(user?.user_role, { token, tokenType, user });
 
-      localStorage.setItem("auth_token", token);
-      localStorage.setItem("auth_user", JSON.stringify(user));
-      localStorage.setItem("token_type", tokenType);
+      if (!redirectUrl) {
+        showToast('Your account role is not supported. Please contact support.', 'danger');
+        return;
+      }
+
+      saveAuthSession({ token, tokenType, user });
 
       console.log("User:", user);
       console.log("Token:", token);
 
       showToast("Login successful", "success");
       setTimeout(() => {
-        window.location.href =
-          `http://localhost:5173/dashboard?token=${encodeURIComponent(token)}`;
-      }, 1200);
+        window.location.replace(redirectUrl);
+      }, LOGIN_SUCCESS_REDIRECT_MS);
     } catch (error) {
       console.error("Login Error:", error);
       showToast(
@@ -154,11 +170,13 @@ export function LoginPage() {
           <div className="absolute w-[160px] h-[160px] rounded-full bg-accent/10 top-10 right-5" />
 
           <div className="flex items-center gap-3 relative z-10">
-            <div className="w-11 h-11 rounded-lg bg-accent flex items-center justify-center text-white font-black text-base">AP</div>
-            <div>
-              <div className="text-white font-bold text-base leading-tight">AP Real Estate</div>
-              <div className="text-blue-300 text-[11px]">Visakhapatnam - Verified Properties</div>
-            </div>
+            <Link to={ROUTES.home} className="flex items-center gap-3 no-underline">
+              <div className="w-11 h-11 rounded-lg bg-accent flex items-center justify-center text-white font-black text-base">VL</div>
+              <div>
+                <div className="text-white font-bold text-base leading-tight">Vizagland Real Estate</div>
+                <div className="text-blue-300 text-[11px]">Visakhapatnam - Verified Properties</div>
+              </div>
+            </Link>
           </div>
 
           <div className="relative z-10">
@@ -169,7 +187,7 @@ export function LoginPage() {
                 { icon: CheckCircle, text: 'Verified Listings' },
                 { icon: Shield, text: 'Secure Portal' },
                 { icon: Users, text: 'Trusted Agents' },
-                { icon: Headphones, text: '24x7 Support: 1800-425-4440' },
+                { icon: Headphones, text: '24x7 Support: 96181 70406 ,  60393 80406' },
               ].map(item => (
                 <li key={item.text} className="flex items-center gap-2.5 text-blue-200 text-[13px]">
                   <item.icon size={15} className="text-accent flex-shrink-0" /> {item.text}
@@ -338,7 +356,13 @@ export function LoginPage() {
           </form>
 
           <div className="text-center mt-5 text-[13px] text-gray-500">
-            New to AP Real Estate? <Link to="/register" className="text-red-700 font-bold no-underline">Sign Up</Link>
+            New to Vizagland Real Estate? <Link to="/register" className="text-red-700 font-bold no-underline">Sign Up</Link>
+          </div>
+
+          <div className="text-center mt-3 text-[13px] text-gray-500">
+            <Link to={ROUTES.home} className="font-medium text-gray-600 no-underline hover:text-primary hover:underline">
+              Back to Home
+            </Link>
           </div>
 
           {/* Mobile-only: link to register */}

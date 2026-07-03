@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, CheckCircle, Shield, Users, Headphones, MapPin, Building, Home as HomeIcon, Map, ShoppingBag, Trees, Wrench } from 'lucide-react';
+import { Search, CheckCircle, Shield, Users, Headphones, MapPin, Building, Home as HomeIcon, Map, ShoppingBag, Trees, Wrench, Loader2 } from 'lucide-react';
 import { FeaturedPropertiesSection } from '../components/home/FeaturedPropertiesSection';
 import { LatestUpdatesSection } from '../components/home/LatestUpdatesSection';
-import { villages } from '../lib/data';
 import { buildSearchPageUrl } from '../lib/property-search/searchUrlSync';
+import { mapMasterLocationToDisplay } from '../lib/masterLocation/mapMasterLocationDisplay';
+import { useMasterLocationSearch } from '../lib/post-property/useMasterLocationSearch';
 
 export function HomePage() {
   return (
@@ -32,40 +33,61 @@ export function HomePage() {
 function HeroSection() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState([]);
-  const [selectedVillage, setSelectedVillage] = useState(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const suggestionsRef = useRef(null);
+  const { setQuery: setSearchQuery, options, loading, error } = useMasterLocationSearch();
+
+  const selectedVillage = selectedLocation
+    ? mapMasterLocationToDisplay(selectedLocation)
+    : null;
 
   useEffect(() => {
     function handleClick(e) {
       if (suggestionsRef.current && !suggestionsRef.current.contains(e.target)) {
-        setSuggestions([]);
+        setShowSuggestions(false);
       }
     }
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
-  function handleInput(val) {
-    setQuery(val);
-    if (!val.trim()) { setSuggestions([]); return; }
-    const hits = villages.filter(v => v.name.toLowerCase().includes(val.toLowerCase()));
-    setSuggestions(hits);
+  function clearSearch() {
+    setQuery('');
+    setSearchQuery('');
+    setSelectedLocation(null);
+    setShowSuggestions(false);
   }
 
-  function selectVillage(v) {
-    setQuery(v.name);
-    setSelectedVillage(v);
-    setSuggestions([]);
+  function handleInput(val) {
+    setQuery(val);
+    setSearchQuery(val);
+
+    if (!val.trim()) {
+      setSelectedLocation(null);
+      setShowSuggestions(false);
+      return;
+    }
+
+    setShowSuggestions(true);
+  }
+
+  function selectVillage(location) {
+    setQuery(location.village);
+    setSelectedLocation(location);
+    setSearchQuery('');
+    setShowSuggestions(false);
   }
 
   function handleSearch() {
     const trimmed = query.trim();
     if (!trimmed) return;
 
-    setSuggestions([]);
+    setShowSuggestions(false);
     navigate(buildSearchPageUrl(trimmed));
   }
+
+  const showDropdown = showSuggestions && query.trim().length > 0;
 
   return (
     <section className="bg-gradient-to-br from-primary via-[#1e4d6b] to-[#1a5e52] py-10 sm:py-16 lg:py-20 relative overflow-hidden">
@@ -118,17 +140,29 @@ function HeroSection() {
                     <Search size={14} /> Search
                   </button>
                 </div>
-                {suggestions.length > 0 && (
+                {showDropdown && (
                   <div className="absolute z-50 w-full bg-white border border-gray-200 border-t-0 rounded-b-lg max-h-56 overflow-y-auto shadow-lg">
-                    {suggestions.map(v => (
-                      <div key={v.name} onClick={() => selectVillage(v)} className="flex items-center gap-2.5 px-3.5 py-2.5 cursor-pointer border-b border-gray-50 last:border-0 hover:bg-orange-50 transition-colors">
-                        <MapPin size={14} className="text-accent flex-shrink-0" />
-                        <div>
-                          <div className="font-semibold text-primary text-[13px]">{v.name}</div>
-                          <div className="text-[11px] text-gray-500">{v.mandal} - {v.gvmcvmrda}</div>
-                        </div>
+                    {loading ? (
+                      <div className="flex items-center gap-2 px-3.5 py-3 text-[13px] text-gray-500">
+                        <Loader2 size={14} className="animate-spin text-accent flex-shrink-0" aria-hidden />
+                        Searching...
                       </div>
-                    ))}
+                    ) : error ? (
+                      <div className="px-3.5 py-3 text-[13px] text-gray-500">{error}</div>
+                    ) : options.length === 0 ? (
+                      <div className="px-3.5 py-3 text-[13px] text-gray-500">No locations found</div>
+                    ) : (
+                      options.map((option) => (
+                        <div
+                          key={option.id ?? option.value}
+                          onClick={() => selectVillage(option.location)}
+                          className="flex items-center gap-2.5 px-3.5 py-2.5 cursor-pointer border-b border-gray-50 last:border-0 hover:bg-orange-50 transition-colors"
+                        >
+                          <MapPin size={14} className="text-accent flex-shrink-0" />
+                          <div className="font-semibold text-primary text-[13px]">{option.label}</div>
+                        </div>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
@@ -143,7 +177,7 @@ function HeroSection() {
                   <span className="text-[12px] text-teal font-semibold flex items-center gap-1.5">
                     <CheckCircle size={14} /> Record found: <strong>{selectedVillage.name}</strong>
                   </span>
-                  <button onClick={() => { setSelectedVillage(null); setQuery(''); }} className="text-gray-400 hover:text-gray-600 text-lg leading-none bg-transparent border-0 cursor-pointer">&times;</button>
+                  <button onClick={clearSearch} className="text-gray-400 hover:text-gray-600 text-lg leading-none bg-transparent border-0 cursor-pointer">&times;</button>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
                   {[
@@ -205,7 +239,7 @@ function NoticeBar() {
     <div className="flex items-center gap-3 border-b border-gray-200 bg-white py-2.5">
       <span className="whitespace-nowrap rounded bg-accent px-2.5 py-0.5 text-[10px] font-bold tracking-wide text-white">NOTICE</span>
       <div className="overflow-hidden whitespace-nowrap text-[13px] text-gray-500">
-        New property listings added daily &nbsp;&bull;&nbsp; Verified properties across Visakhapatnam &nbsp;&bull;&nbsp; Helpline: 1800-425-4440
+        New property listings added daily &nbsp;&bull;&nbsp; Verified properties across Visakhapatnam &nbsp;&bull;&nbsp; Helpline: 96181 70406 ,  60393 80406
       </div>
     </div>
   );
@@ -254,7 +288,7 @@ function WhyChooseUs() {
     <section>
       <div className="mb-6 text-center">
         <div className="mb-1.5 text-[12px] font-bold uppercase tracking-wider text-accent">Our Promise</div>
-        <h3 className="text-2xl font-extrabold text-primary">Why Choose AP Real Estate?</h3>
+        <h3 className="text-2xl font-extrabold text-primary">Why Choose Vizagland Real Estate?</h3>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
           {items.map(i => (

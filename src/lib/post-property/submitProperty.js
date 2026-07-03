@@ -1,8 +1,8 @@
 import axios from "axios";
-import { MULTIPART_FIELDS } from "./media/constants";
+import { buildPropertyMultipartFormData } from "./media/buildMultipartFormData";
 
 const PROPERTIES_API_URL =
-  "https://trapezoid-reprimand-registry.ngrok-free.dev/api/properties";
+  "https://api.vizagland.com/api/properties";
 
 function showSubmissionToast(message, type = "danger") {
   const existing = document.getElementById("submit-property-toast");
@@ -25,7 +25,15 @@ function showSubmissionToast(message, type = "danger") {
  * Submits a property listing payload to the backend.
  */
 export async function submitProperty(payload) {
-  console.log("Post Property Payload:", payload);
+  console.group("STEP 1 - submitProperty");
+
+  console.log("Payload:", payload);
+
+  console.log("propertyImages:", payload.propertyImages);
+
+  console.log("propertyDocuments:", payload.propertyDocuments);
+
+  console.groupEnd();
 
   const {
     propertyImages = [],
@@ -33,19 +41,10 @@ export async function submitProperty(payload) {
     ...jsonPayload
   } = payload;
 
-  const formData = new FormData();
-  formData.append(MULTIPART_FIELDS.data, JSON.stringify(jsonPayload));
-
-  propertyImages.forEach((image) => {
-    if (image.file instanceof File) {
-      formData.append("property_images[]", image.file);
-    }
-  });
-
-  propertyDocuments.forEach((document) => {
-    if (document.file instanceof File) {
-      formData.append("property_documents[]", document.file);
-    }
+  const formData = buildPropertyMultipartFormData({
+    ...jsonPayload,
+    propertyImages,
+    propertyDocuments,
   });
 
   try {

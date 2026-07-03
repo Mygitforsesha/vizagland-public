@@ -3,6 +3,7 @@ import FormTextField from '@/components/post-property/FormTextField';
 import PropertyTypeSelectField from '@/components/post-property/PropertyTypeSelectField';
 import SearchableSelectField from '@/components/post-property/SearchableSelectField';
 import {
+  ApprovalField,
   AreaUnitSelectField,
   BedroomsSelectField,
   FacingField,
@@ -28,8 +29,31 @@ export default function PropertyDetailsSection({
   return (
     <FormSection title="Property Details">
       <div className={formGrid4Class}>
+        <SearchableSelectField
+          label="LP Number"
+          placeholder="Select LP Number"
+          searchPlaceholder="Search LP Number..."
+          value={formState.lpNo}
+          onValueChange={(value) => updateField('lpNo', value)}
+          options={lpPlotOptions}
+        />
+        <SearchableSelectField
+          label="LP No. Year"
+          placeholder="Select LP No. Year"
+          searchPlaceholder="Search LP No. Year..."
+          value={formState.year}
+          onValueChange={(value) => updateField('year', value)}
+          options={yearOptions}
+        />
+        <PropertyTypeSelectField
+          label="Price per Sq Ft"
+          placeholder="Select"
+          value={formState.pricePerSqft}
+          onValueChange={(value) => updateField('pricePerSqft', value)}
+          options={pricePerSqftOptions}
+        />
         <FormTextField
-          label="Price (value)"
+          label="Price (Value)"
           type="number"
           value={formState.priceValue}
           onChange={(event) => updateField('priceValue', event.target.value)}
@@ -54,21 +78,6 @@ export default function PropertyDetailsSection({
           onValueChange={(value) => updateField('areaUnit', value)}
           options={dynamicAreaUnitOptions}
         />
-        <PropertyTypeSelectField
-          label="Price per Sq Ft"
-          placeholder="Select"
-          value={formState.pricePerSqft}
-          onValueChange={(value) => updateField('pricePerSqft', value)}
-          options={pricePerSqftOptions}
-        />
-        <PropertyAgeSelectField
-          value={formState.propertyAge}
-          onValueChange={(value) => updateField('propertyAge', value)}
-        />
-        <FacingField
-          value={formState.facing}
-          onValueChange={(value) => updateField('facing', value)}
-        />
         <TotalFloorsSelectField
           value={formState.totalFloors}
           onValueChange={(value) => updateField('totalFloors', value)}
@@ -76,6 +85,32 @@ export default function PropertyDetailsSection({
         <FloorNumberSelectField
           value={formState.floorNumber}
           onValueChange={(value) => updateField('floorNumber', value)}
+        />
+        <PropertyAgeSelectField
+          value={formState.propertyAge}
+          onValueChange={(value) => updateField('propertyAge', value)}
+        />
+        <FormTextField
+          label="Flat No./Door No."
+          value={formState.propertyFlatDoorNo}
+          onChange={(event) => updateField('propertyFlatDoorNo', event.target.value)}
+          placeholder="Enter flat or door number"
+        />
+        <BedroomsSelectField
+          value={formState.bedRooms}
+          onValueChange={(value) => updateField('bedRooms', value)}
+        />
+        <FacingField
+          value={formState.facing}
+          onValueChange={(value) => updateField('facing', value)}
+        />
+        <SearchableSelectField
+          label="Plot No."
+          placeholder="Select Plot No."
+          searchPlaceholder="Search Plot No..."
+          value={formState.plotNo}
+          onValueChange={(value) => updateField('plotNo', value)}
+          options={lpPlotOptions}
         />
         <FurnishingSelectField
           value={formState.furnishing}
@@ -88,33 +123,9 @@ export default function PropertyDetailsSection({
           onValueChange={(value) => updateField('propertyUnder', value)}
           options={propertyUnderOptions}
         />
-        <SearchableSelectField
-          label="LP No."
-          placeholder="Select LP No."
-          searchPlaceholder="Search LP No..."
-          value={formState.lpNo}
-          onValueChange={(value) => updateField('lpNo', value)}
-          options={lpPlotOptions}
-        />
-        <SearchableSelectField
-          label="Plot No."
-          placeholder="Select Plot No."
-          searchPlaceholder="Search Plot No..."
-          value={formState.plotNo}
-          onValueChange={(value) => updateField('plotNo', value)}
-          options={lpPlotOptions}
-        />
-        <SearchableSelectField
-          label="Year"
-          placeholder="Select Year"
-          searchPlaceholder="Search Year..."
-          value={formState.year}
-          onValueChange={(value) => updateField('year', value)}
-          options={yearOptions}
-        />
-        <BedroomsSelectField
-          value={formState.bedRooms}
-          onValueChange={(value) => updateField('bedRooms', value)}
+        <ApprovalField
+          value={formState.approvedBy}
+          onValueChange={(value) => updateField('approvedBy', value)}
         />
       </div>
     </FormSection>

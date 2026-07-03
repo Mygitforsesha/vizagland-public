@@ -146,7 +146,7 @@ export const residentialTypeOptions = [
   { label: 'Plot', value: 'Plot', units: ['Sq.Yards'] },
   { label: 'House', value: 'House', units: ['Sq.Yards'] },
   { label: 'Builder Floor Apartment', value: 'Builder Floor Apartment', units: ['SFT'] },
-  { label: 'Villas', value: 'Villas', units: ['Sq.Yards', 'SFT'] },
+  { label: 'Villas', value: 'Villas', units: ['Sq.Yards', 'SFT'], displayUnits: ['Sq.Yards', 'SFT'] },
   { label: 'Group House', value: 'Group House', units: ['SFT'] },
   { label: 'Individual House', value: 'Individual House', units: ['Sq.Yards'] },
   { label: 'Pent House', value: 'Pent House', units: ['SFT'] },
@@ -157,28 +157,73 @@ export const commercialTypeOptions = [
   { label: 'Office', value: 'Office', units: ['SFT'] },
   { label: 'Commercial Space', value: 'Commercial Space', units: ['SFT'] },
   { label: 'Office in IT Park/SEZ', value: 'Office in IT Park/SEZ', units: ['SFT'] },
-  { label: 'Shop', value: 'Shop', units: ['SFT'] },
+  { label: 'Shop', value: 'Shop', units: ['SFT'], displayUnits: ['SFT', 'Sq.Yards'] },
   { label: 'Showroom', value: 'Showroom', units: ['SFT'] },
-  { label: 'Land', value: 'Land', units: ['Sq.Yards'] },
+  { label: 'Land', value: 'Land', units: ['Sq.Yards'], displayUnits: ['Sq.Yards', 'Cents', 'Acres'] },
   { label: 'Warehouse/Godown', value: 'Warehouse/Godown', units: ['Sq.Yards'] },
   { label: 'Industrial Land', value: 'Industrial Land', units: ['Sq.Yards'] },
-  { label: 'Industrial Building', value: 'Industrial Building', units: ['SFT'] },
-  { label: 'Industrial Shed', value: 'Industrial Shed', units: ['SFT'] },
-  { label: 'Factory', value: 'Factory', units: ['Acres', 'Cents'] },
-  { label: 'Lease', value: 'Lease', units: ['SFT'] },
-  { label: 'Rent', value: 'Rent', units: ['SFT'] },
+  {
+    label: 'Industrial Building',
+    value: 'Industrial Building',
+    units: ['SFT'],
+    displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+  },
+  {
+    label: 'Industrial Shed',
+    value: 'Industrial Shed',
+    units: ['SFT'],
+    displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+  },
+  {
+    label: 'Factory',
+    value: 'Factory',
+    units: ['Acres', 'Cents'],
+    displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+  },
+  {
+    label: 'Lease',
+    value: 'Lease',
+    units: ['SFT'],
+    displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+  },
+  {
+    label: 'Rent',
+    value: 'Rent',
+    units: ['SFT'],
+    displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+  },
 ];
 
 export const developmentTypeOptions = [
-  { label: 'Open Plots', value: 'Open Plots', units: ['Acres', 'Cents'] },
-  { label: 'Gated Community', value: 'Gated Community', units: ['Acres', 'Cents'] },
-  { label: 'Township', value: 'Township', units: ['Acres', 'Cents'] },
+  {
+    label: 'Open Plots',
+    value: 'Open Plots',
+    units: ['Acres', 'Cents'],
+    displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+  },
+  {
+    label: 'Gated Community',
+    value: 'Gated Community',
+    units: ['Acres', 'Cents'],
+    displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+  },
+  {
+    label: 'Township',
+    value: 'Township',
+    units: ['Acres', 'Cents'],
+    displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+  },
 ];
 
 export const layoutTypeOptions = [
   { label: 'Approved Layout', value: 'Approved Layout', units: ['Acres', 'Cents'] },
   { label: 'Venture', value: 'Venture', units: ['Acres', 'Cents'] },
-  { label: 'Farm Plots', value: 'Farm Plots', units: ['Acres', 'Cents'] },
+  {
+    label: 'Farm Plots',
+    value: 'Farm Plots',
+    units: ['Acres', 'Cents'],
+    displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+  },
 ];
 
 export const propertyStatusOptions = toSelectOptions([
@@ -204,6 +249,110 @@ export const constructionTypeOptions = toSelectOptions([
   'Interior Design',
 ]);
 
+const PROPERTY_CATEGORY_SOURCES = [
+  { payloadField: 'property_residential_type', options: residentialTypeOptions },
+  { payloadField: 'property_commercial_type', options: commercialTypeOptions },
+  { payloadField: 'property_development_type', options: developmentTypeOptions },
+  { payloadField: 'property_layout_type', options: layoutTypeOptions },
+];
+
+const PROPERTY_CATEGORY_DISPLAY_ORDER = [
+  'Flats',
+  'Plot',
+  'House',
+  'Builder Floor Apartment',
+  'Villas',
+  'Group House',
+  'Individual House',
+  'Pent House',
+  'Studio Apartment',
+  'Office',
+  'Commercial Space',
+  'Office in IT Park/SEZ',
+  'Shop',
+  'Showroom',
+  'Land',
+  'Warehouse/Godown',
+  'Industrial Land',
+  'Industrial Building',
+  'Industrial Shed',
+  'Factory',
+  'Lease',
+  'Rent',
+  'Open Plots',
+  'Gated Community',
+  'Township',
+  'Approved Layout',
+  'Venture',
+  'Farm Plots',
+];
+
+const EMPTY_PROPERTY_GROUP_AND_TYPES = {
+  property_residential_type: '',
+  property_commercial_type: '',
+  property_development_type: '',
+  property_layout_type: '',
+  property_construction_status: '',
+  property_construction_type: '',
+};
+
+function formatPropertyCategoryDisplayLabel(option) {
+  const displayUnits = option.displayUnits ?? option.units;
+
+  if (!displayUnits?.length) {
+    return option.value;
+  }
+
+  return `${option.value} (${displayUnits.join(' / ')})`;
+}
+
+function buildPropertyCategoryRegistry() {
+  const byValue = new Map();
+
+  for (const { payloadField, options } of PROPERTY_CATEGORY_SOURCES) {
+    for (const option of options) {
+      if (byValue.has(option.value)) continue;
+
+      byValue.set(option.value, {
+        label: formatPropertyCategoryDisplayLabel(option),
+        value: option.value,
+        payloadField,
+        units: option.units,
+        displayUnits: option.displayUnits ?? option.units,
+      });
+    }
+  }
+
+  return byValue;
+}
+
+const propertyCategoryRegistry = buildPropertyCategoryRegistry();
+
+/** Client-defined property category options in display order. */
+export const propertyCategoryOptions = PROPERTY_CATEGORY_DISPLAY_ORDER.map((value) => {
+  const option = propertyCategoryRegistry.get(value);
+  return option ? { label: option.label, value: option.value } : null;
+}).filter(Boolean);
+
+export function findPropertyCategoryOption(value) {
+  if (!value) return null;
+  return propertyCategoryRegistry.get(value) ?? null;
+}
+
+/** Maps the unified propertyCategory selection into property_group_and_types payload fields. */
+export function buildPropertyGroupAndTypesPayload(propertyCategory = '') {
+  const selectedOption = findPropertyCategoryOption(propertyCategory);
+
+  if (!selectedOption) {
+    return { ...EMPTY_PROPERTY_GROUP_AND_TYPES };
+  }
+
+  return {
+    ...EMPTY_PROPERTY_GROUP_AND_TYPES,
+    [selectedOption.payloadField]: selectedOption.value,
+  };
+}
+
 export const otherServiceOptions = toSelectOptions([
   'Documentation',
   'Encumbrance Certificate (EC)',
@@ -219,51 +368,28 @@ export const otherServiceOptions = toSelectOptions([
   '1B',
 ]);
 
-const propertyTypeOptionGroups = [
-  residentialTypeOptions,
-  commercialTypeOptions,
-  developmentTypeOptions,
-  layoutTypeOptions,
-];
-
-const propertyTypeFieldKeys = [
-  'selectedResidential',
-  'selectedCommercial',
-  'selectedDevelopments',
-  'selectedLayout',
-];
-
 /**
  * Finds the selected property type config to drive dynamic area-unit options.
  */
 export function findSelectedPropertyType(formState) {
-  for (let index = 0; index < propertyTypeFieldKeys.length; index += 1) {
-    const fieldKey = propertyTypeFieldKeys[index];
-    const selectedValue = formState[fieldKey];
-
-    if (!selectedValue) continue;
-
-    const match = propertyTypeOptionGroups[index].find(
-      (option) => option.value === selectedValue,
-    );
-
-    if (match) return match;
-  }
-
-  return null;
+  return findPropertyCategoryOption(formState.propertyCategory);
 }
 
 /**
- * Returns area-unit options based on the selected property type, or all units as fallback.
+ * Returns area-unit options based on the selected property category label units,
+ * or the full default list when no units are defined.
  */
 export function getDynamicAreaUnitOptions(formState) {
   const selectedPropertyType = findSelectedPropertyType(formState);
+  const areaUnits = selectedPropertyType?.displayUnits?.length
+    ? selectedPropertyType.displayUnits
+    : selectedPropertyType?.units;
 
-  if (!selectedPropertyType?.units?.length) {
+  if (!areaUnits?.length) {
     return areaUnitOptions;
   }
 
-  return selectedPropertyType.units.map((unit) => ({
+  return areaUnits.map((unit) => ({
     label: unit,
     value: unit,
   }));

@@ -200,7 +200,7 @@ export function ContactPage() {
                       <div className="md:col-span-2">
                         <label className="flex items-start gap-2 cursor-pointer">
                           <input type="checkbox" required checked={formData.consent} onChange={e => setFormData({ ...formData, consent: e.target.checked })} className="mt-0.5 accent-primary" />
-                          <span className="text-[12px] text-gray-600">I consent to being contacted by AP Real Estate Portal officials regarding my enquiry.</span>
+                          <span className="text-[12px] text-gray-600">I consent to being contacted by Vizagland Real Estate Portal officials regarding my enquiry.</span>
                         </label>
                       </div>
                       <div className="md:col-span-2 flex gap-2">

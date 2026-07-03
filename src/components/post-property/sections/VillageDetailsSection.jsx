@@ -1,20 +1,50 @@
 import FormSection from '@/components/post-property/FormSection';
 import FormTextField from '@/components/post-property/FormTextField';
 import PropertyTypeSelectField from '@/components/post-property/PropertyTypeSelectField';
+import SearchableSelectField from '@/components/post-property/SearchableSelectField';
 import { formGridClass } from '@/components/post-property/formStyles';
 import { nearbyLocationOptions } from '@/lib/post-property/formOptions';
+import {
+  applyMasterLocationToForm,
+  clearLocationFields,
+} from '@/lib/post-property/mapMasterLocationToForm';
+import { useMasterLocationSearch } from '@/lib/post-property/useMasterLocationSearch';
 
 export default function VillageDetailsSection({ formState, updateField, postMode = 'owner' }) {
   const hideAgentFields = postMode === 'agent';
+  const { setQuery, options, loading, error } = useMasterLocationSearch();
+
+  function handleVillageChange(value) {
+    if (!value) {
+      clearLocationFields(updateField);
+      return;
+    }
+
+    updateField('village', value);
+  }
+
+  function handleVillageSelect(option) {
+    if (option?.location) {
+      applyMasterLocationToForm(updateField, option.location);
+    }
+  }
 
   return (
     <FormSection title="Village Details">
       <div className={formGridClass}>
-        <FormTextField
+        <SearchableSelectField
           label="Village"
+          placeholder="Search village name"
+          searchPlaceholder="Type to search village..."
           value={formState.village}
-          onChange={(event) => updateField('village', event.target.value)}
-          placeholder="Enter village name"
+          onValueChange={handleVillageChange}
+          onOptionSelect={handleVillageSelect}
+          onSearchChange={setQuery}
+          options={options}
+          loading={loading}
+          errorMessage={error}
+          emptyMessage="No villages found"
+          clearable
         />
         <PropertyTypeSelectField
           label="Nearby Location / Landmark"

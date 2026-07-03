@@ -345,8 +345,8 @@ export function PostPropertyPage() {
       </section>
 
       {/* Sticky Help */}
-      <a href="tel:9030002266" className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 bg-accent text-white font-semibold px-3 sm:px-4 py-2.5 sm:py-3 rounded-full shadow-lg hover:bg-accent-hover transition-colors flex items-center gap-2 text-[12px] sm:text-sm no-underline">
-        <Phone size={14} className="sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Need Help?</span> 9030002266
+      <a href="tel:9618170406" className="fixed bottom-4 right-4 sm:bottom-5 sm:right-5 z-50 bg-accent text-white font-semibold px-3 sm:px-4 py-2.5 sm:py-3 rounded-full shadow-lg hover:bg-accent-hover transition-colors flex items-center gap-2 text-[12px] sm:text-sm no-underline">
+        <Phone size={14} className="sm:w-4 sm:h-4" /> <span className="hidden sm:inline">Need Help?</span> 9618170406
       </a>
 
 

@@ -19,12 +19,7 @@ export const INITIAL_POST_PROPERTY_FORM_STATE = {
   gvmcVmrda: '',
 
   // Property Group & Types
-  selectedResidential: '',
-  selectedCommercial: '',
-  selectedDevelopments: '',
-  selectedLayout: '',
-  selectedHouseDev: '',
-  selectedConstruction: '',
+  propertyCategory: '',
 
   // Property Details
   priceValue: '',
@@ -41,10 +36,13 @@ export const INITIAL_POST_PROPERTY_FORM_STATE = {
   lpNo: '',
   plotNo: '',
   year: '',
+  propertyFlatDoorNo: '',
   bedRooms: '',
 
   // Other Services
   selectedOtherService: '',
+  youtubeVideoLink: '',
+  propertyLocationLink: '',
 
   // Media
   propertyImages: [],

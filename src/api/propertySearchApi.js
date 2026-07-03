@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const PROPERTY_SEARCH_API_URL =
-  'https://trapezoid-reprimand-registry.ngrok-free.dev/api/properties/search';
+  'https://api.vizagland.com/api/properties/search';
 
 /**
  * POST /api/properties/search — HTTP only; no response shaping.
@@ -11,7 +11,6 @@ export async function postPropertySearch(payload) {
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      'ngrok-skip-browser-warning': 'true',
     },
   });
 

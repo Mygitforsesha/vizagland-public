@@ -18,7 +18,7 @@ import {
 import { SearchIcon, CheckIcon } from "lucide-react"
 
 function Command({
-  className,
+  className, 
   ...props
 }) {
   return (
@@ -71,7 +71,7 @@ function CommandInput({
           )}
           {...props} />
         <InputGroupAddon>
-          <SearchIcon className="size-4 shrink-0 opacity-50" />
+          <SearchIcon className="size-4 shrink-0 opacity-50 mr-2" />
         </InputGroupAddon>
       </InputGroup>
     </div>

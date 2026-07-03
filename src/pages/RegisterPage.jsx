@@ -1,13 +1,33 @@
-import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useRef, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { CheckCircle, Shield, Users, Headphones, Eye, EyeOff, User, Phone, Mail, MapPin, X, Plus, ArrowRight, ChevronDown } from 'lucide-react';
+import { Check, CheckCircle, ChevronDown, Shield, Users, Headphones, Eye, EyeOff, User, Phone, Mail, MapPin, X, Plus, ArrowRight, Calendar, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { filterOptionsByPrefix } from '@/components/post-property/SearchableSelectField';
+import { ROUTES } from '@/constants/routes';
+import { captureUserLocation } from '@/services/locationService';
 
-const REGISTER_API_URL = 'https://trapezoid-reprimand-registry.ngrok-free.dev/api/auth/register';
+const REGISTER_API_URL = 'https://api.vizagland.com/api/auth/register';
+const TOAST_DISPLAY_MS = 2000;
 
 const REGISTRATION_TYPES = [
-  { group: 'Role', items: ['Buyer', 'Owner', 'Owner Relative', 'Owner Friend', 'Realtor', 'agent', 'employee','Marketing Person', 'Promoter', 'Company', 'Builder', 'Developer'] },
-  { group: 'Professional', items: ['Civil Engineer', 'Architect', 'Structural Engineer'] },
+  { group: 'Owner / Agent', items: ['Buyer', 'Seller', 'Owner', 'Owner Relative', 'Owner Friend', 'Realtor', 'Agent', 'Employee', 'Marketing Person', 'Promoter', 'Company', 'Builder', 'Developer', 'NRI'] },
+  { group: 'Professional', items: ['Civil Engineer', 'Architect', 'Structural Engineer', 'Software Engineer', 'Advocate'] },
   { group: 'Membership', items: ['Diamond Member', 'Gold Member', 'Platinum Member', 'Bronze Member'] },
   { group: 'Media', items: ['Eenadu', 'Sakshi', 'Vaartha', 'Andhra Jyothi', 'Hindu', 'Indian Express'] },
   { group: 'Social Media', items: ['Facebook', 'Twitter', 'Instagram', 'YouTube', 'WhatsApp', 'Telegram', 'Social Media'] },
@@ -16,12 +36,100 @@ const REGISTRATION_TYPES = [
 
 const REGISTRATION_GROUP_KEYS = {
   Membership: 'membership',
-  Role: 'roles',
+  'Owner / Agent': 'roles',
   Professional: 'professional',
   Media: 'media',
   'Social Media': 'socialMedia',
   Other: 'other',
 };
+
+const EMPTY_REGISTRATION_TYPE_STATE = {
+  membership: '',
+  roles: [],
+  professional: [],
+  media: [],
+  socialMedia: [],
+  other: [],
+};
+
+function buildRegistrationTypeRegistry() {
+  const byValue = new Map();
+
+  for (const group of REGISTRATION_TYPES) {
+    const stateKey = REGISTRATION_GROUP_KEYS[group.group];
+
+    for (const item of group.items) {
+      if (byValue.has(item)) continue;
+
+      byValue.set(item, {
+        label: item,
+        value: item,
+        stateKey,
+      });
+    }
+  }
+
+  return byValue;
+}
+
+const registrationTypeRegistry = buildRegistrationTypeRegistry();
+
+const REGISTRATION_TYPE_DISPLAY_ORDER = [
+  'Buyer',
+  'Seller',
+  'Owner',
+  'Owner Relative',
+  'Owner Friend',
+  'Realtor',
+  'Civil Engineer',
+  'Structural Engineer',
+  'Architect',
+  'Software Engineer',
+  'NRI',
+  'Advocate',
+  'Diamond Member',
+  'Gold Member',
+  'Platinum Member',
+  'Bronze Member',
+  'Eenadu',
+  'Sakshi',
+  'Vaartha',
+  'Andhra Jyothi',
+  'Hindu',
+  'Indian Express',
+  'Facebook',
+  'Twitter',
+  'Instagram',
+  'YouTube',
+  'WhatsApp',
+  'Telegram',
+];
+
+function buildRegistrationTypeOptions(registry) {
+  const seen = new Set();
+  const ordered = [];
+
+  for (const value of REGISTRATION_TYPE_DISPLAY_ORDER) {
+    const option = registry.get(value);
+    if (!option || seen.has(value)) continue;
+    ordered.push(option);
+    seen.add(value);
+  }
+
+  for (const group of REGISTRATION_TYPES) {
+    for (const item of group.items) {
+      if (seen.has(item)) continue;
+      const option = registry.get(item);
+      if (!option) continue;
+      ordered.push(option);
+      seen.add(item);
+    }
+  }
+
+  return ordered;
+}
+
+const registrationTypeOptions = buildRegistrationTypeOptions(registrationTypeRegistry);
 
 const INITIAL_FORM_DATA = {
   membership: '',
@@ -64,7 +172,7 @@ function validateField(field, formData, captchaSum) {
     // case 'membership':
     //   return formData.membership ? '' : FIELD_ERROR_MESSAGES.membership;
     case 'roles':
-      return formData.roles.length > 0 ? '' : FIELD_ERROR_MESSAGES.roles;
+      return hasRegistrationTypeSelection(formData) ? '' : FIELD_ERROR_MESSAGES.roles;
     case 'name':
       return formData.name.trim() ? '' : FIELD_ERROR_MESSAGES.name;
     case 'phoneNumber':
@@ -99,14 +207,28 @@ const FORM_FIELD_CLASS = 'flex flex-col';
 const VILLAGE_LABEL_CLASS = 'text-[12px] text-gray-500 block mb-1.5 min-h-[2rem] leading-snug';
 const VILLAGE_CONTROL_CLASS = 'w-full h-10 border border-gray-200 rounded-lg px-3 text-[13px] outline-none focus:border-primary bg-white transition-colors';
 const VILLAGE_INPUT_CLASS = `${VILLAGE_CONTROL_CLASS} placeholder:text-gray-400`;
-const VILLAGE_SELECT_CLASS = `${VILLAGE_CONTROL_CLASS} appearance-none pr-10 cursor-pointer`;
 const VILLAGE_FIELD_CLASS = 'flex flex-col min-w-0';
+
+const REGISTRATION_TYPE_FIELD_CLASS = `${VILLAGE_FIELD_CLASS} h-full`;
+
+const REGISTRATION_TYPE_LABEL_CLASS =
+  'mb-2 block min-h-[1rem] px-0 text-[11px] font-bold uppercase leading-tight tracking-wider text-gray-400';
+
+const REGISTRATION_TYPE_ERROR_SLOT_CLASS = 'min-h-[1.125rem]';
+
+const REGISTRATION_TYPE_ERROR_TRIGGER_CLASS =
+  'border-gray-200 bg-red-500/[0.04] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_3px_rgba(239,68,68,0.07)] ring-1 ring-red-500/15';
 
 function FieldError({ id, message }) {
   if (!message) return null;
   return (
-    <p id={id} className="text-[11px] text-red-600 mt-1" role="alert">
-      {message}
+    <p
+      id={id}
+      className="mt-2 flex items-start gap-1.5 text-[11px] leading-snug text-red-500/85"
+      role="alert"
+    >
+      <AlertCircle size={13} className="mt-px shrink-0" aria-hidden />
+      <span>{message}</span>
     </p>
   );
 }
@@ -122,6 +244,45 @@ function getAllSelectedTypes(formData) {
   ];
 }
 
+function hasRegistrationTypeSelection(formData) {
+  return getAllSelectedTypes(formData).length > 0 || formData.other.includes('Others');
+}
+
+function getSelectedRegistrationTypeValue(formData) {
+  if (formData.membership) return formData.membership;
+
+  for (const key of ['roles', 'professional', 'media', 'socialMedia', 'other']) {
+    const selectedValue = formData[key]?.[0];
+    if (selectedValue) return selectedValue;
+  }
+
+  return '';
+}
+
+function applyRegistrationTypeSelection(previousState, value) {
+  const nextState = {
+    ...previousState,
+    ...EMPTY_REGISTRATION_TYPE_STATE,
+  };
+
+  if (!value) {
+    return nextState;
+  }
+
+  const match = registrationTypeRegistry.get(value);
+  if (!match) {
+    return nextState;
+  }
+
+  if (match.stateKey === 'membership') {
+    nextState.membership = value;
+  } else {
+    nextState[match.stateKey] = [value];
+  }
+
+  return nextState;
+}
+
 function trimString(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -135,7 +296,436 @@ function toNullableArray(arr) {
   return arr?.length ? arr : null;
 }
 
-const DOB_INPUT_CLASS = `flex-1 basis-0 min-w-0 ${FORM_INPUT_CLASS} text-center`;
+const MONTH_LABELS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const WEEKDAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+function parseDobFromParts(day, month, year) {
+  if (!trimString(day) || !trimString(month) || !trimString(year)) return null;
+
+  const century = parseInt(year, 10) > 30 ? '19' : '20';
+  const fullYear = parseInt(`${century}${year.padStart(2, '0')}`, 10);
+  const parsedMonth = parseInt(month, 10) - 1;
+  const parsedDay = parseInt(day, 10);
+
+  if (!Number.isFinite(fullYear) || !Number.isFinite(parsedMonth) || !Number.isFinite(parsedDay)) {
+    return null;
+  }
+
+  const date = new Date(fullYear, parsedMonth, parsedDay);
+  if (
+    date.getFullYear() !== fullYear
+    || date.getMonth() !== parsedMonth
+    || date.getDate() !== parsedDay
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function formatDobDisplay(day, month, year) {
+  if (!trimString(day) || !trimString(month) || !trimString(year)) return '';
+  return `${day.padStart(2, '0')} / ${month.padStart(2, '0')} / ${year.padStart(2, '0')}`;
+}
+
+function dateToDobParts(date) {
+  return {
+    day: String(date.getDate()),
+    month: String(date.getMonth() + 1),
+    year: String(date.getFullYear()).slice(-2),
+  };
+}
+
+function startOfDay(date) {
+  const next = new Date(date);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function getDefaultDobViewDate() {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - 25);
+  date.setDate(1);
+  return startOfDay(date);
+}
+
+function getDobYearOptions(currentYear) {
+  return Array.from({ length: 101 }, (_, index) => currentYear - index);
+}
+
+const CALENDAR_DROPDOWN_TRIGGER_CLASS =
+  'h-8 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-2.5 text-[12px] font-semibold text-primary shadow-sm transition-colors hover:border-primary hover:bg-accent-light/40 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 data-[size=default]:h-8 [&_svg]:text-gray-400 data-[placeholder]:text-gray-400';
+
+const VILLAGE_DROPDOWN_TRIGGER_CLASS =
+  'h-10 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-[13px] font-medium text-gray-900 shadow-sm transition-colors hover:border-primary hover:bg-accent-light/40 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 data-[size=default]:h-10 [&_svg]:text-gray-400 data-[placeholder]:text-gray-400';
+
+const THEMED_DROPDOWN_CONTENT_CLASS =
+  'z-[260] max-h-52 rounded-xl border border-gray-200 bg-white p-1 shadow-lg';
+
+const THEMED_DROPDOWN_ITEM_CLASS =
+  'rounded-md py-2 pl-2.5 pr-8 text-[13px] text-gray-700 transition-colors focus:bg-accent-light focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:font-semibold data-[state=checked]:text-primary [&_svg]:text-primary';
+
+function ThemedDropdown({
+  id,
+  ariaLabel,
+  value,
+  onValueChange,
+  options,
+  placeholder,
+  triggerClassName,
+  className = '',
+}) {
+  return (
+    <Select value={value || undefined} onValueChange={onValueChange}>
+      <SelectTrigger
+        id={id}
+        aria-label={ariaLabel}
+        className={`${triggerClassName} ${className}`}
+      >
+        <SelectValue placeholder={placeholder} className="truncate" />
+      </SelectTrigger>
+      <SelectContent
+        position="popper"
+        align="start"
+        sideOffset={4}
+        className={THEMED_DROPDOWN_CONTENT_CLASS}
+      >
+        {options.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            disabled={option.disabled}
+            className={THEMED_DROPDOWN_ITEM_CLASS}
+          >
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function ThemedSearchableDropdown({
+  id,
+  ariaLabel,
+  label,
+  value,
+  onValueChange,
+  options,
+  placeholder,
+  searchPlaceholder,
+  triggerClassName,
+  className = '',
+  required = false,
+  hasError = false,
+  onOpenChange,
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const filteredOptions = useMemo(
+    () => filterOptionsByPrefix(options, search),
+    [options, search],
+  );
+
+  const selectedLabel =
+    options.find((option) => option.value === value)?.label ?? value;
+
+  const showErrorState = hasError && !open;
+
+  function handleOpenChange(nextOpen) {
+    setOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+    if (!nextOpen) setSearch('');
+  }
+
+  return (
+    <div className={`${REGISTRATION_TYPE_FIELD_CLASS} ${open ? 'z-[60]' : ''} ${className}`}>
+      <label htmlFor={id} className={REGISTRATION_TYPE_LABEL_CLASS}>
+        {label}
+        {required ? <span className="text-red-500"> *</span> : null}
+      </label>
+      <Popover open={open} onOpenChange={handleOpenChange}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            id={id}
+            aria-label={ariaLabel}
+            aria-expanded={open}
+            aria-invalid={showErrorState ? true : undefined}
+            className={`${triggerClassName} flex items-center justify-between gap-2 text-left transition-all duration-200 ${
+              showErrorState ? REGISTRATION_TYPE_ERROR_TRIGGER_CLASS : ''
+            }`}
+          >
+            <span className={`truncate ${!value ? 'text-gray-400' : ''}`}>
+              {value ? selectedLabel : placeholder}
+            </span>
+            <ChevronDown
+              className={`size-4 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
+              aria-hidden
+            />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent
+          align="start"
+          sideOffset={6}
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          className={`${THEMED_DROPDOWN_CONTENT_CLASS} z-[260] w-[var(--radix-popover-trigger-width)] p-0`}
+        >
+          <Command shouldFilter={false}>
+            <CommandInput
+              placeholder={searchPlaceholder}
+              value={search}
+              onValueChange={setSearch}
+            />
+            <CommandList className="max-h-72">
+              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandGroup>
+                {filteredOptions.map((option) => (
+                  <CommandItem
+                    key={option.value}
+                    value={option.value}
+                    onSelect={() => {
+                      onValueChange(option.value);
+                      handleOpenChange(false);
+                    }}
+                    className={`cursor-pointer ${value === option.value ? 'bg-primary/10 font-semibold text-primary' : ''}`}
+                  >
+                    <span className="truncate">{option.label}</span>
+                    {value === option.value && (
+                      <Check className="ml-auto size-4 text-primary" aria-hidden />
+                    )}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+function DateOfBirthPicker({ day, month, year, onChange }) {
+  const [open, setOpen] = useState(false);
+  const selectedDate = parseDobFromParts(day, month, year);
+  const [viewDate, setViewDate] = useState(() => selectedDate ?? getDefaultDobViewDate());
+  const today = startOfDay(new Date());
+  const currentYear = today.getFullYear();
+  const minYear = currentYear - 100;
+  const yearOptions = getDobYearOptions(currentYear);
+
+  useEffect(() => {
+    const parsed = parseDobFromParts(day, month, year);
+    if (parsed) {
+      setViewDate(parsed);
+    }
+  }, [day, month, year]);
+
+  const viewYear = viewDate.getFullYear();
+  const viewMonth = viewDate.getMonth();
+  const displayValue = formatDobDisplay(day, month, year);
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const firstWeekday = new Date(viewYear, viewMonth, 1).getDay();
+  const canGoPrevious = viewYear > minYear || (viewYear === minYear && viewMonth > 0);
+  const canGoNext = viewYear < currentYear
+    || (viewYear === currentYear && viewMonth < today.getMonth());
+
+  function clampViewDate(year, month) {
+    let nextMonth = month;
+    let nextYear = year;
+
+    if (nextYear > currentYear) {
+      nextYear = currentYear;
+    }
+    if (nextYear < minYear) {
+      nextYear = minYear;
+    }
+    if (nextYear === currentYear && nextMonth > today.getMonth()) {
+      nextMonth = today.getMonth();
+    }
+
+    return new Date(nextYear, nextMonth, 1);
+  }
+
+  function handleOpenChange(nextOpen) {
+    setOpen(nextOpen);
+    if (nextOpen && selectedDate) {
+      setViewDate(selectedDate);
+    }
+  }
+
+  function goToPreviousMonth() {
+    if (!canGoPrevious) return;
+    setViewDate(new Date(viewYear, viewMonth - 1, 1));
+  }
+
+  function goToNextMonth() {
+    if (!canGoNext) return;
+    setViewDate(new Date(viewYear, viewMonth + 1, 1));
+  }
+
+  function handleMonthChange(nextValue) {
+    setViewDate(clampViewDate(viewYear, parseInt(nextValue, 10)));
+  }
+
+  function handleYearChange(nextValue) {
+    setViewDate(clampViewDate(parseInt(nextValue, 10), viewMonth));
+  }
+
+  function handleSelectDay(dayValue) {
+    const nextDate = new Date(viewYear, viewMonth, dayValue);
+    if (nextDate > today) return;
+
+    onChange(dateToDobParts(nextDate));
+    setOpen(false);
+  }
+
+  function handleDayKeyDown(event, dayValue) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleSelectDay(dayValue);
+    }
+  }
+
+  const calendarCells = [];
+  for (let index = 0; index < firstWeekday; index += 1) {
+    calendarCells.push(null);
+  }
+  for (let dayValue = 1; dayValue <= daysInMonth; dayValue += 1) {
+    calendarCells.push(dayValue);
+  }
+
+  const monthOptions = MONTH_LABELS.map((label, monthIndex) => ({
+    value: String(monthIndex),
+    label,
+    disabled: viewYear === currentYear && monthIndex > today.getMonth(),
+  }));
+
+  const yearSelectOptions = yearOptions.map((yearOption) => ({
+    value: String(yearOption),
+    label: String(yearOption),
+  }));
+
+  return (
+    <Popover open={open} onOpenChange={handleOpenChange}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          id="register-dob"
+          aria-label="Date of Birth"
+          aria-expanded={open}
+          aria-haspopup="dialog"
+          className={`relative w-full max-w-[15rem] sm:max-w-[16.5rem] ${FORM_INPUT_CLASS} pl-0 pr-9 text-left ${displayValue ? 'text-gray-800' : 'text-gray-400'}`}
+        >
+          <span>{displayValue || 'DD / MM / YY'}</span>
+          <Calendar size={16} className="absolute right-0 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        sideOffset={8}
+        className="w-[min(calc(100vw-2rem),20rem)] border border-gray-200 bg-white p-3 shadow-lg rounded-xl"
+      >
+        <div className="mb-3 flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={goToPreviousMonth}
+            disabled={!canGoPrevious}
+            aria-label="Previous month"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:text-gray-600"
+          >
+            <ChevronLeft size={16} aria-hidden />
+          </button>
+
+          <div className="flex min-w-0 flex-1 items-center gap-1.5">
+            <ThemedDropdown
+              ariaLabel="Select month"
+              value={String(viewMonth)}
+              onValueChange={handleMonthChange}
+              options={monthOptions}
+              triggerClassName={CALENDAR_DROPDOWN_TRIGGER_CLASS}
+              className="flex-[1.4]"
+            />
+
+            <ThemedDropdown
+              ariaLabel="Select year"
+              value={String(viewYear)}
+              onValueChange={handleYearChange}
+              options={yearSelectOptions}
+              triggerClassName={CALENDAR_DROPDOWN_TRIGGER_CLASS}
+              className="flex-1"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={goToNextMonth}
+            disabled={!canGoNext}
+            aria-label="Next month"
+            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-600 transition-colors hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-gray-200 disabled:hover:text-gray-600"
+          >
+            <ChevronRight size={16} aria-hidden />
+          </button>
+        </div>
+
+        <div className="mb-1 grid grid-cols-7 gap-1">
+          {WEEKDAY_LABELS.map((label) => (
+            <div key={label} className="py-1 text-center text-[11px] font-semibold uppercase tracking-wide text-gray-400">
+              {label}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-7 gap-1" role="grid" aria-label="Choose date of birth">
+          {calendarCells.map((dayValue, index) => {
+            if (dayValue == null) {
+              return <div key={`empty-${index}`} aria-hidden />;
+            }
+
+            const cellDate = new Date(viewYear, viewMonth, dayValue);
+            const isFuture = cellDate > today;
+            const isSelected = selectedDate
+              && selectedDate.getFullYear() === viewYear
+              && selectedDate.getMonth() === viewMonth
+              && selectedDate.getDate() === dayValue;
+            const isToday = cellDate.getTime() === today.getTime();
+
+            return (
+              <button
+                key={`${viewYear}-${viewMonth}-${dayValue}`}
+                type="button"
+                role="gridcell"
+                tabIndex={isSelected ? 0 : -1}
+                disabled={isFuture}
+                aria-label={`${dayValue} ${MONTH_LABELS[viewMonth]} ${viewYear}`}
+                aria-selected={isSelected}
+                aria-current={isToday ? 'date' : undefined}
+                onClick={() => handleSelectDay(dayValue)}
+                onKeyDown={(event) => handleDayKeyDown(event, dayValue)}
+                className={`h-9 w-full rounded-lg text-[13px] font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 ${
+                  isSelected
+                    ? 'bg-primary text-white'
+                    : isFuture
+                      ? 'cursor-not-allowed text-gray-300'
+                      : isToday
+                        ? 'border border-accent text-primary hover:bg-accent-light'
+                        : 'text-gray-700 hover:bg-accent-light hover:text-primary'
+                }`}
+              >
+                {dayValue}
+              </button>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 function buildDateOfBirth(day, month, year) {
   if (!trimString(day) || !trimString(month) || !trimString(year)) return null;
@@ -154,27 +744,18 @@ function RegistrationTypeStep({
   onFieldChange,
 }) {
   const [customInput, setCustomInput] = useState('');
+  const [shakeRolesField, setShakeRolesField] = useState(false);
   const othersSelected = formData.other.includes('Others');
   const customRoles = formData.other.filter(r => r !== 'Others');
+  const selectedRegistrationType = getSelectedRegistrationTypeValue(formData);
   const showRolesError =
   (touched.roles || step1SubmitAttempted || submitAttempted) &&
-  formData.roles.length === 0;
-  function isTypeSelected(groupName, type) {
-    const key = REGISTRATION_GROUP_KEYS[groupName];
-    if (key === 'roles') return formData.roles.includes(type);
-    return formData[key].includes(type);
-  }
+  !hasRegistrationTypeSelection(formData);
 
-  function toggleType(groupName, type) {
-    const key = REGISTRATION_GROUP_KEYS[groupName];
+  function selectRegistrationType(value) {
     setFormData(prev => {
-      let next;
-        if (key === 'roles') {
-        next = { ...prev, roles: prev.roles.includes(type) ? prev.roles.filter(t => t !== type) : [...prev.roles, type] };
-      } else {
-        next = { ...prev, [key]: prev[key].includes(type) ? prev[key].filter(t => t !== type) : [...prev[key], type] };
-      }
-      onFieldChange(key, next);
+      const next = applyRegistrationTypeSelection(prev, value);
+      onFieldChange('roles', next);
       return next;
     });
   }
@@ -197,19 +778,29 @@ function RegistrationTypeStep({
     if (e.key === 'Enter') { e.preventDefault(); addCustomRole(); }
   }
 
-  const hasSelection = getAllSelectedTypes(formData).length > 0 || formData.other.includes('Others');
+  function handleContinueClick() {
+    if (!hasRegistrationTypeSelection(formData)) {
+      setShakeRolesField(true);
+      window.setTimeout(() => setShakeRolesField(false), 250);
+    }
+    onContinue();
+  }
+
+  const hasSelection = hasRegistrationTypeSelection(formData);
 
   return (
-    <div className="min-h-screen bg-surface py-6 sm:py-8 px-3 sm:px-4">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-surface py-6 sm:py-8 px-3 sm:px-4 overflow-x-hidden">
+      <div className="max-w-3xl mx-auto w-full min-w-0">
         {/* Header */}
         <div className="text-center mb-6 sm:mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center text-white font-black text-sm">AP</div>
-            <span className="font-bold text-lg text-gray-900">AP Real Estate</span>
+            <Link to={ROUTES.home} className="inline-flex items-center gap-2 no-underline">
+              <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center text-white font-black text-sm">VL</div>
+              <span className="font-bold text-lg text-gray-900">Vizagland Real Estate</span>
+            </Link>
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 mb-2">How would you like to register?</h1>
-          <p className="text-[13px] text-gray-500">Select one or more options that describe you.</p>
+          <p className="text-[13px] text-gray-500">Select your registration type.</p>
         </div>
 
         {/* Step indicator */}
@@ -225,60 +816,38 @@ function RegistrationTypeStep({
           </div>
         </div>
 
-        {/* Type Groups */}
-        <div className="space-y-5 sm:space-y-6">
-          {REGISTRATION_TYPES.map(group => {
-            const isRolesGroup = group.group === 'Role';
-            return (
-            <div
-              key={group.group}
-              ref={isRolesGroup ? rolesSectionRef : undefined}
-              tabIndex={isRolesGroup ? -1 : undefined}
-              aria-invalid={isRolesGroup && showRolesError ? true : undefined}
-              aria-describedby={isRolesGroup && showRolesError ? 'roles-error' : undefined}
-              onBlur={isRolesGroup ? () => onFieldChange('roles', formData, true) : undefined}
-              className={isRolesGroup && showRolesError ? 'p-2 -mx-2 rounded-lg border-2 border-red-500 bg-red-50' : isRolesGroup ? 'p-2 -mx-2' : undefined}
-            >
-              <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">{group.group}</h3>
-              <div className="flex flex-wrap gap-2 sm:gap-2.5">
-                {group.items.map(type => {
-                  const isSelected = isTypeSelected(group.group, type);
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => toggleType(group.group, type)}
-                      className={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg border-2 text-[12px] sm:text-[13px] font-medium cursor-pointer transition-all duration-200 ${
-                        isSelected
-                          ? 'border-primary bg-primary/5 text-primary shadow-sm scale-[1.02]'
-                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:shadow-sm'
-                      }`}
-                    >
-                      <div className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-                        isSelected ? 'border-primary bg-primary' : 'border-gray-300 bg-white'
-                      }`}>
-                        {isSelected && (
-                          <svg className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      {type}
-                    </button>
-                  );
-                })}
-              </div>
-              {isRolesGroup && (
-                <FieldError id="roles-error" message={showRolesError ? FIELD_ERROR_MESSAGES.roles : ''} />
-              )}
-            </div>
-            );
-          })}
+        <div
+          ref={rolesSectionRef}
+          tabIndex={-1}
+          aria-invalid={showRolesError ? true : undefined}
+          aria-describedby={showRolesError ? 'roles-error' : undefined}
+          onBlur={() => onFieldChange('roles', formData, true)}
+          className="w-full min-w-0"
+        >
+          <div className={shakeRolesField ? 'animate-validation-shake' : undefined}>
+            <ThemedSearchableDropdown
+              id="registration-type"
+              ariaLabel="Registration Type"
+              label="Registration Type"
+              required
+              hasError={showRolesError}
+              value={selectedRegistrationType}
+              onValueChange={selectRegistrationType}
+              options={registrationTypeOptions}
+              placeholder="Select Registration Type"
+              searchPlaceholder="Search registration type..."
+              triggerClassName={VILLAGE_DROPDOWN_TRIGGER_CLASS}
+              className="w-full"
+            />
+          </div>
+          <div className={REGISTRATION_TYPE_ERROR_SLOT_CLASS}>
+            <FieldError id="roles-error" message={showRolesError ? FIELD_ERROR_MESSAGES.roles : ''} />
+          </div>
         </div>
 
         {/* Others custom input */}
         {othersSelected && (
-          <div className="mt-6 p-4 bg-white border-2 border-dashed border-gray-200 rounded-xl animate-fade-in">
+          <div className="mt-6 w-full rounded-xl border-2 border-dashed border-gray-200 bg-white p-4 animate-fade-in">
             <label className="text-xs font-semibold text-gray-600 block mb-2">Add custom roles</label>
             <div className="flex gap-2">
               <input
@@ -318,33 +887,38 @@ function RegistrationTypeStep({
         )}
 
         {/* Selected summary & Continue */}
-        <div className="mt-8 sticky bottom-4">
-          <div className={`bg-white border rounded-xl shadow-lg p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 ${showRolesError ? 'border-red-500' : 'border-gray-200'}`}>
-            {hasSelection && (
-              <div className="flex-1 min-w-0">
+        <div className="sticky bottom-4 mt-8 w-full">
+            <div className="flex w-full flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-lg md:flex-row md:items-center md:justify-between">
+            {hasSelection ? (
+              <div className="min-w-0 flex-1">
                 <span className="text-xs font-medium text-gray-500">Selected:</span>
-                <div className="flex flex-wrap gap-1.5 mt-1">
-                  {[    
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {formData.membership && (
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">{formData.membership}</span>
+                  )}
+                  {[
                     ...formData.roles,
                     ...formData.professional,
                     ...formData.media,
                     ...formData.socialMedia,
                   ].map(t => (
-                    <span key={t} className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[11px] font-medium rounded-full">{t}</span>
+                    <span key={t} className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">{t}</span>
                   ))}
                   {formData.other.includes('Others') && (
-                    <span className="px-2 py-0.5 bg-gray-100 text-gray-700 text-[11px] font-medium rounded-full">Others</span>
+                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">Others</span>
                   )}
                   {customRoles.map(r => (
-                    <span key={r} className="px-2 py-0.5 bg-accent/10 text-accent text-[11px] font-medium rounded-full">{r}</span>
+                    <span key={r} className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">{r}</span>
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
             <button
               type="button"
-              onClick={onContinue}
-              className="flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-red-700 text-white rounded-lg text-sm font-bold border-0 cursor-pointer hover:bg-red-800 transition-colors whitespace-nowrap shadow-sm w-full sm:w-auto justify-center"
+              onClick={handleContinueClick}
+              className={`flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-lg border-0 bg-red-700 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-red-800 md:px-6 md:py-3 ${
+                hasSelection ? 'w-full md:w-auto' : 'w-full md:ml-auto md:w-auto'
+              }`}
             >
               Continue <ArrowRight size={16} />
             </button>
@@ -353,7 +927,16 @@ function RegistrationTypeStep({
 
         {/* Login link */}
         <div className="text-center mt-6 text-[13px] text-gray-500">
-          Already have an account? <Link to="/login" className="text-red-700 font-bold no-underline">Login</Link>
+          Already have an account?{' '}
+          <Link to="/login" className="text-red-700 font-bold no-underline hover:underline">
+            Sign in
+          </Link>
+        </div>
+
+        <div className="text-center mt-3 text-[13px] text-gray-500">
+          <Link to={ROUTES.home} className="font-medium text-gray-600 no-underline hover:text-primary hover:underline">
+            Back to Home
+          </Link>
         </div>
       </div>
     </div>
@@ -361,6 +944,7 @@ function RegistrationTypeStep({
 }
 
 export function RegisterPage() {
+  const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -538,7 +1122,7 @@ export function RegisterPage() {
 
   function showToast(msg, type) {
     setToast({ msg, type });
-    setTimeout(() => setToast(null), 4000);
+    setTimeout(() => setToast(null), TOAST_DISPLAY_MS);
   }
 
   function buildRegisterPayload() {
@@ -620,15 +1204,34 @@ export function RegisterPage() {
       return;
     }
 
-    const payload = buildRegisterPayload();
-    console.log('Register Payload:', payload);
-
     setIsSubmitting(true);
     try {
+      const locationPayload = await captureUserLocation();
+      const payload = {
+        ...buildRegisterPayload(),
+        ...locationPayload,
+      };
+      console.log('Register Payload:', payload);
+
       const response = await axios.post(REGISTER_API_URL, payload);
       console.log('Register Response:', response.data);
-      showToast('Registration successful.', 'success');
-      resetForm();
+
+      if (response?.data?.status !== 'success') {
+        showToast(
+          response?.data?.message || 'Registration failed. Please try again.',
+          'danger',
+        );
+        return;
+      }
+
+      showToast(
+        response?.data?.message || 'Registration successful.',
+        'success',
+      );
+      // Temporary redirect to Home Page — replace with the final post-registration flow when implemented.
+      setTimeout(() => {
+        navigate(ROUTES.home);
+      }, TOAST_DISPLAY_MS);
     } catch (error) {
       const message = error.response?.data?.message || 'Something went wrong. Please try again.';
       showToast(message, 'danger');
@@ -671,11 +1274,13 @@ export function RegisterPage() {
           <div className="absolute w-[160px] h-[160px] rounded-full bg-accent/10 top-10 right-5" />
 
           <div className="flex items-center gap-3 relative z-10">
-            <div className="w-11 h-11 rounded-lg bg-accent flex items-center justify-center text-white font-black text-base">AP</div>
-            <div>
-              <div className="text-white font-bold text-base leading-tight">AP Real Estate</div>
-              <div className="text-blue-300 text-[11px]">Visakhapatnam - Verified Properties</div>
-            </div>
+            <Link to={ROUTES.home} className="flex items-center gap-3 no-underline">
+              <div className="w-11 h-11 rounded-lg bg-accent flex items-center justify-center text-white font-black text-base">VL</div>
+              <div>
+                <div className="text-white font-bold text-base leading-tight">Vizagland Real Estate</div>
+                <div className="text-blue-300 text-[11px]">Visakhapatnam - Verified Properties</div>
+              </div>
+            </Link>
           </div>
 
           <div className="relative z-10">
@@ -690,7 +1295,7 @@ export function RegisterPage() {
                 { icon: CheckCircle, text: 'Free Account - No hidden charges' },
                 { icon: Shield, text: 'Verified & Secure Platform' },
                 { icon: Users, text: 'Connect with Trusted Agents' },
-                { icon: Headphones, text: '24x7 Support: 1800-425-4440' },
+                { icon: Headphones, text: '24x7 Support: 96181 70406 ,  60393 80406' },
               ].map(item => (
                 <li key={item.text} className="flex items-center gap-2.5 text-blue-200 text-[13px]">
                   <item.icon size={15} className="text-accent flex-shrink-0" /> {item.text}
@@ -774,42 +1379,17 @@ export function RegisterPage() {
 
             {/* Date of Birth */}
             <div className={FORM_FIELD_CLASS}>
-              <label className={FORM_LABEL_CLASS}>Date of Birth (DD / MM / YY)</label>
-              <div className="flex gap-3 w-full max-w-[15rem] sm:max-w-[16.5rem]">
-                <input
-                  id="register-dob-day"
-                  type="text"
-                  inputMode="numeric"
-                  value={dobDay}
-                  onChange={e => setDobDay(e.target.value.replace(/\D/g, ''))}
-                  maxLength={2}
-                  placeholder="DD"
-                  aria-label="Day"
-                  className={DOB_INPUT_CLASS}
-                />
-                <input
-                  id="register-dob-month"
-                  type="text"
-                  inputMode="numeric"
-                  value={dobMonth}
-                  onChange={e => setDobMonth(e.target.value.replace(/\D/g, ''))}
-                  maxLength={2}
-                  placeholder="MM"
-                  aria-label="Month"
-                  className={DOB_INPUT_CLASS}
-                />
-                <input
-                  id="register-dob-year"
-                  type="text"
-                  inputMode="numeric"
-                  value={dobYear}
-                  onChange={e => setDobYear(e.target.value.replace(/\D/g, ''))}
-                  maxLength={2}
-                  placeholder="YY"
-                  aria-label="Year"
-                  className={DOB_INPUT_CLASS}
-                />
-              </div>
+              <label htmlFor="register-dob" className={FORM_LABEL_CLASS}>Date of Birth (DD / MM / YY)</label>
+              <DateOfBirthPicker
+                day={dobDay}
+                month={dobMonth}
+                year={dobYear}
+                onChange={({ day, month, year }) => {
+                  setDobDay(day);
+                  setDobMonth(month);
+                  setDobYear(year);
+                }}
+              />
             </div>
 
             {/* Gender */}
@@ -911,18 +1491,18 @@ export function RegisterPage() {
                   </div>
                   <div className={VILLAGE_FIELD_CLASS}>
                     <label htmlFor="register-nearby-location" className={VILLAGE_LABEL_CLASS}>Nearby Location / Landmark</label>
-                    <div className="relative">
-                      <select
-                        id="register-nearby-location"
-                        value={nearbyLocation}
-                        onChange={e => setNearbyLocation(e.target.value)}
-                        className={`${VILLAGE_SELECT_CLASS} ${nearbyLocation ? 'text-gray-900' : 'text-gray-400'}`}
-                      >
-                        <option value="">Select Nearby Location</option>
-                        {NEARBY_LOCATION_OPTIONS.map(loc => <option key={loc} value={loc}>{loc}</option>)}
-                      </select>
-                      <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" aria-hidden />
-                    </div>
+                    <ThemedDropdown
+                      id="register-nearby-location"
+                      ariaLabel="Nearby Location / Landmark"
+                      value={nearbyLocation}
+                      onValueChange={setNearbyLocation}
+                      placeholder="Nearby Location"
+                      triggerClassName={VILLAGE_DROPDOWN_TRIGGER_CLASS}
+                      options={NEARBY_LOCATION_OPTIONS.map((location) => ({
+                        value: location,
+                        label: location,
+                      }))}
+                    />
                     {nearbyLocation === 'Others' && (
                       <div className="mt-3 animate-fade-in">
                         <label htmlFor="register-custom-nearby" className={VILLAGE_LABEL_CLASS}>Add Nearby Location</label>
@@ -1043,8 +1623,17 @@ export function RegisterPage() {
             </button>
           </form>
 
-          <div className="text-center mt-5 text-[13px] text-gray-500 md:hidden">
-            Already have an account? <Link to="/login" className="text-red-700 font-bold no-underline">Login</Link>
+          <div className="text-center mt-5 text-[13px] text-gray-500">
+            Already have an account?{' '}
+            <Link to="/login" className="text-red-700 font-bold no-underline hover:underline">
+              Sign in
+            </Link>
+          </div>
+
+          <div className="text-center mt-3 text-[13px] text-gray-500">
+            <Link to={ROUTES.home} className="font-medium text-gray-600 no-underline hover:text-primary hover:underline">
+              Back to Home
+            </Link>
           </div>
         </div>
       </div>

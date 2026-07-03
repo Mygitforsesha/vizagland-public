@@ -34,6 +34,7 @@ import {
 } from '../../lib/property-search/quickFilterUtils';
 import { buildSearchPayload } from '../../lib/property-search/buildSearchPayload';
 import { fetchPropertySearchResults } from '../../services/propertySearchService';
+import { getDynamicAreaUnitOptions } from '../../lib/post-property/formOptions';
 import {
   PAGE_QUERY_PARAM,
   buildSyncableUrlUpdates,
@@ -434,6 +435,15 @@ export function usePropertySearch() {
       return;
     }
 
+    if (fieldName === 'propertyCategory') {
+      setSearchFilters((previous) => ({
+        ...previous,
+        propertyCategory: typeof value === 'string' ? normalizeFilterValue(value) : '',
+        areaUnit: value !== previous.propertyCategory ? '' : previous.areaUnit,
+      }));
+      return;
+    }
+
     if (fieldName === 'facing' || fieldName === 'approvedBy') {
       value = Array.isArray(value) ? value : [];
     } else if (fieldName === 'amenities' && !Array.isArray(value)) {
@@ -478,7 +488,16 @@ export function usePropertySearch() {
     return villageData.filter((village) => village.name.toLowerCase().includes(query));
   }, [villageQuery]);
 
+  const dynamicAreaUnitOptions = useMemo(
+    () => getDynamicAreaUnitOptions({ propertyCategory: searchFilters.propertyCategory }),
+    [searchFilters.propertyCategory],
+  );
+
   const availableAreaUnits = useMemo(() => {
+    if (searchFilters.propertyCategory) {
+      return ['All', ...dynamicAreaUnitOptions.map((option) => option.value)];
+    }
+
     if (propertyGroup.length === 0) return areaUnits;
 
     const units = new Set(['All']);
@@ -494,7 +513,7 @@ export function usePropertySearch() {
     if (units.size === 1) return areaUnits;
 
     return [...units];
-  }, [propertyGroup]);
+  }, [searchFilters.propertyCategory, dynamicAreaUnitOptions, propertyGroup]);
 
   const uniqueFloors = [...new Set(searchProperties.map((property) => property.totalFloors).filter((floor) => floor > 0))].sort(
     (a, b) => a - b,

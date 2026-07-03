@@ -9,16 +9,32 @@ import { INITIAL_SEARCH_FILTERS } from './searchFilterDefaults';
 export const SIDEBAR_FILTER_KEYS = [
   'district',
   'mandal',
-  'propertyType',
+  'propertyCategory',
   'minPrice',
   'maxPrice',
 ];
 
 /** Filters shown in MoreFiltersDrawer / MobileFilterSheet. */
 export const ADVANCED_FILTER_KEYS = [
+  'propertyCategory',
   'selectedVillage',
   'panchayati',
+  'nearbyLocation',
+  'customNearby',
+  'gvmc',
+  'vmrda',
+  'regArea',
+  'gvmcVmrda',
   'propertyGroup',
+  'propertyType',
+  'pricePerSqft',
+  'priceValue',
+  'propertyPriceRange',
+  'lpNo',
+  'year',
+  'plotNo',
+  'propertyFlatDoorNo',
+  'propertyUnder',
   'minArea',
   'maxArea',
   'areaUnit',
@@ -33,6 +49,7 @@ export const ADVANCED_FILTER_KEYS = [
   'floorNumber',
   'facing',
   'approvedBy',
+  'selectedOtherService',
 ];
 
 const SEARCH_FILTER_COUNT_KEYS = Object.keys(INITIAL_SEARCH_FILTERS).filter(
