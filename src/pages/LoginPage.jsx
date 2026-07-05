@@ -162,10 +162,10 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-3 sm:p-6">
-      <div className="flex w-full max-w-[900px] min-h-[540px] bg-white rounded-2xl overflow-hidden shadow-xl">
+    <div className="flex min-h-dvh flex-col items-center bg-surface px-4 py-4 sm:bg-gray-100 sm:p-6 md:justify-center">
+      <div className="flex w-full max-w-[900px] flex-col overflow-hidden rounded-2xl bg-white shadow-xl md:min-h-[540px] md:flex-row">
         {/* Left Banner */}
-        <div className="hidden md:flex w-[42%] bg-gradient-to-br from-primary to-primary-dark p-6 lg:p-10 flex-col justify-between relative overflow-hidden">
+        <div className="relative hidden w-[42%] flex-col justify-between overflow-hidden bg-gradient-to-br from-primary to-primary-dark p-6 md:flex lg:p-10">
           <div className="absolute w-[280px] h-[280px] rounded-full bg-white/[0.04] -bottom-20 -right-20" />
           <div className="absolute w-[160px] h-[160px] rounded-full bg-accent/10 top-10 right-5" />
 
@@ -205,14 +205,31 @@ export function LoginPage() {
         </div>
 
         {/* Right Form */}
-        <div className="flex-1 p-5 sm:p-8 lg:p-11 flex flex-col justify-center">
-          <h2 className="text-[20px] sm:text-[22px] font-extrabold text-gray-900 mb-1">Login</h2>
-          <p className="text-[12px] sm:text-[13px] text-gray-500 mb-4 sm:mb-6">Welcome back! Please login to continue.</p>
+        <div className="flex flex-1 flex-col">
+          <div className="border-b border-gray-100 bg-gradient-to-br from-primary/[0.04] via-white to-accent/[0.05] px-5 py-4 md:hidden">
+            <Link to={ROUTES.home} className="flex items-center gap-3 no-underline">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-accent text-base font-black text-white">
+                VL
+              </div>
+              <div className="min-w-0">
+                <p className="m-0 text-lg font-extrabold leading-tight text-primary">Vizagland Real Estate</p>
+                <p className="m-0 mt-0.5 text-[11px] font-medium text-gray-500">
+                  Visakhapatnam - Verified Properties
+                </p>
+              </div>
+            </Link>
+          </div>
+
+          <div className="flex flex-1 flex-col justify-center px-5 py-5 sm:px-8 sm:py-8 lg:px-11 lg:py-11">
+            <div className="mb-4 sm:mb-6">
+              <h2 className="mb-1 text-xl font-extrabold text-gray-900 sm:text-[22px]">Login</h2>
+              <p className="text-xs text-gray-500 sm:text-[13px]">Welcome back! Please login to continue.</p>
+            </div>
 
           <form onSubmit={handleLogin}>
             {/* Mobile Number */}
-            <div className="mb-5">
-              <label className="text-[12px] text-gray-500 block mb-1">Mobile Number</label>
+            <div className="mb-4 sm:mb-5">
+              <label className="text-[12px] text-gray-500 block mb-1">Username / 10-digit Mobile Number</label>
               <div className="relative">
                 <Phone size={15} className="absolute left-0 top-1/2 -translate-y-1/2 text-gray-400" />
                 <span className="absolute left-6 top-1/2 -translate-y-1/2 text-sm text-gray-500">+91</span>
@@ -291,7 +308,7 @@ export function LoginPage() {
             )} */}
 
             {/* Password Section */}
-            <div className="space-y-4 mb-5">
+            <div className="mb-4 space-y-4 sm:mb-5">
               <div>
                 <div className="flex justify-between items-center">
                   <label className="text-[12px] text-gray-500">Password</label>
@@ -320,7 +337,7 @@ export function LoginPage() {
             </div>
 
             {/* Captcha */}
-            <div className="mb-5">
+            <div className="mb-4 sm:mb-5">
               <label className="text-[12px] text-gray-500 block mb-1.5">Captcha</label>
               <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
                 <div className="px-2.5 sm:px-3.5 py-1.5 rounded-md border-2 border-blue-300 font-mono text-base sm:text-lg font-extrabold tracking-[3px] sm:tracking-[5px] text-blue-800 select-none line-through decoration-wavy decoration-red-500 bg-blue-100">{captcha}</div>
@@ -349,25 +366,26 @@ export function LoginPage() {
               type="submit"
               disabled={loading}
               aria-busy={loading}
-              className="w-full bg-red-700 text-white border-0 rounded-lg py-3 text-[15px] font-bold cursor-pointer hover:bg-red-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="min-h-11 w-full cursor-pointer rounded-lg border-0 bg-red-700 py-3 text-[15px] font-bold text-white transition-colors hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
           </form>
 
-          <div className="text-center mt-5 text-[13px] text-gray-500">
-            New to Vizagland Real Estate? <Link to="/register" className="text-red-700 font-bold no-underline">Sign Up</Link>
+          <div className="mt-4 text-center text-[13px] text-gray-500 sm:mt-5">
+            New to Vizagland Real Estate? <Link to="/register" className="font-bold text-red-700 no-underline">Sign Up</Link>
           </div>
 
-          <div className="text-center mt-3 text-[13px] text-gray-500">
+          <div className="mt-2.5 text-center text-[13px] text-gray-500 sm:mt-3">
             <Link to={ROUTES.home} className="font-medium text-gray-600 no-underline hover:text-primary hover:underline">
               Back to Home
             </Link>
           </div>
 
           {/* Mobile-only: link to register */}
-          <div className="md:hidden text-center mt-3">
-            <Link to="/register" className="text-[12px] text-primary font-semibold no-underline">Create New Account</Link>
+          <div className="mt-2.5 text-center md:hidden sm:mt-3">
+            <Link to="/register" className="text-[12px] font-semibold text-primary no-underline">Create New Account</Link>
+          </div>
           </div>
         </div>
       </div>
@@ -376,7 +394,7 @@ export function LoginPage() {
       {toast && (
         <div
           role="alert"
-          className={`fixed top-6 left-1/2 -translate-x-1/2 z-[99999] min-w-[400px] max-w-[calc(100vw-2rem)] rounded-xl shadow-2xl border-l-4 backdrop-blur-md bg-white/95 px-6 py-4 flex items-center gap-3 text-base font-semibold text-gray-900 animate-slide-down ${toast.type === 'success' ? 'border-green-600' : 'border-red-600'
+          className={`fixed left-1/2 top-4 z-[99999] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-xl border-l-4 bg-white/95 px-4 py-3 text-sm font-semibold text-gray-900 shadow-2xl backdrop-blur-md animate-slide-down sm:top-6 sm:min-w-[400px] sm:px-6 sm:py-4 sm:text-base ${toast.type === 'success' ? 'border-green-600' : 'border-red-600'
             }`}
         >
           {toast.type === 'success' ? (

@@ -22,6 +22,7 @@ export const INITIAL_POST_PROPERTY_FORM_STATE = {
   propertyCategory: '',
 
   // Property Details
+  projectName: '',
   priceValue: '',
   priceRange: '',
   areaValue: '',
@@ -36,6 +37,10 @@ export const INITIAL_POST_PROPERTY_FORM_STATE = {
   lpNo: '',
   plotNo: '',
   year: '',
+  blockPhase: '',
+  documentNo: '',
+  documentYear: '',
+  registrationOfficeArea: '',
   propertyFlatDoorNo: '',
   bedRooms: '',
 
@@ -43,6 +48,7 @@ export const INITIAL_POST_PROPERTY_FORM_STATE = {
   selectedOtherService: '',
   youtubeVideoLink: '',
   propertyLocationLink: '',
+  propertyContactNumbers: [{ registrationType: '', phoneNumber: '' }],
 
   // Media
   propertyImages: [],

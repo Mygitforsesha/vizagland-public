@@ -4,9 +4,9 @@ import { propertyCategoryOptions } from '@/lib/post-property/formOptions';
 
 export default function PropertyGroupTypesSection({ formState, updateField }) {
   return (
-    <FormSection title="Property Group & Types">
+    <FormSection>
       <SearchableSelectField
-        label="Property Category"
+        hideLabel
         placeholder="Select Property Category"
         searchPlaceholder="Search property category..."
         value={formState.propertyCategory}

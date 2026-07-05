@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/command';
 import {
   formFieldClass,
+  formFieldCompactClass,
   formLabelClass,
   formSelectContentClass,
   formSelectItemSelectedClass,
@@ -32,6 +33,9 @@ export function filterOptionsByPrefix(options, query) {
 
 export default function SearchableSelectField({
   label,
+  hideLabel = false,
+  id,
+  ariaLabel,
   placeholder,
   searchPlaceholder,
   value,
@@ -45,7 +49,11 @@ export default function SearchableSelectField({
   clearable = false,
   className,
 }) {
-  const fieldId = label.replace(/\s+/g, '-').toLowerCase();
+  const fieldId =
+    id ??
+    (label ? label.replace(/\s+/g, '-').toLowerCase() : undefined) ??
+    `search-${placeholder?.replace(/\s+/g, '-').toLowerCase() ?? 'field'}`;
+  const resolvedAriaLabel = ariaLabel ?? label ?? placeholder;
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -71,16 +79,18 @@ export default function SearchableSelectField({
   }
 
   return (
-    <div className={cn(formFieldClass, open && 'z-[60]', className)}>
-      <label htmlFor={fieldId} className={formLabelClass}>
-        {label}
-      </label>
+    <div className={cn(hideLabel ? formFieldCompactClass : formFieldClass, open && 'z-[60]', className)}>
+      {!hideLabel && label ? (
+        <label htmlFor={fieldId} className={formLabelClass}>
+          {label}
+        </label>
+      ) : null}
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <button
             type="button"
             id={fieldId}
-            aria-label={label}
+            aria-label={resolvedAriaLabel}
             aria-expanded={open}
             className={cn(
               formSelectTriggerClass,
@@ -95,7 +105,7 @@ export default function SearchableSelectField({
                 <span
                   role="button"
                   tabIndex={0}
-                  aria-label={`Clear ${label}`}
+                  aria-label={`Clear ${resolvedAriaLabel}`}
                   className="rounded p-0.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                   onClick={(event) => {
                     event.preventDefault();
@@ -134,7 +144,7 @@ export default function SearchableSelectField({
         >
           <Command shouldFilter={false}>
             <CommandInput
-              placeholder={searchPlaceholder ?? `Search ${label}...`}
+              placeholder={searchPlaceholder ?? (label ? `Search ${label}...` : 'Search...')}
               value={search}
               onValueChange={handleSearchChange}
             />

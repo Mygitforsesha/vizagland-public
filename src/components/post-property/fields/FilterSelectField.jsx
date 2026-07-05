@@ -22,6 +22,7 @@ function resolveOptions(options, allowAll, allLabel) {
  */
 export default function FilterSelectField({
   label,
+  hideLabel = false,
   placeholder,
   value,
   onValueChange,
@@ -35,6 +36,7 @@ export default function FilterSelectField({
   return (
     <PropertyTypeSelectField
       label={label}
+      hideLabel={hideLabel}
       placeholder={placeholder}
       value={allowAll ? toEmptySelectValue(value) : value || ''}
       onValueChange={(next) =>

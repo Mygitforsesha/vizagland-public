@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { createPropertyDocumentUploadItem } from '@/lib/post-property/media/createUploadItems';
 import { formatFileSize, getFileExtension } from './uploadUtils';
 import {
-  formBadgePrimaryClass,
+  formBadgeAccentClass,
   formDropzoneActiveClass,
   formDropzoneBaseClass,
   formDropzoneIdleClass,
@@ -22,6 +22,8 @@ import {
   formHintClass,
   formPreviewCardClass,
 } from './formStyles';
+
+const DEFAULT_MAX_DOCUMENTS = 10;
 
 const ACCEPTED_DOCUMENTS = {
   'application/pdf': ['.pdf'],
@@ -96,9 +98,11 @@ function getIconAccentClass(filename) {
 
 export default function DocumentUploadField({
   label = 'Documents',
+  hideTitle = false,
   description = 'Drag and drop documents here, or click to browse',
   value = [],
   onChange,
+  maxDocuments = DEFAULT_MAX_DOCUMENTS,
   className,
 }) {
   const processFiles = useCallback(
@@ -133,14 +137,20 @@ export default function DocumentUploadField({
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h4 className={formFieldTitleClass}>{label}</h4>
-          <p className={formHintClass}>PDF, DOC, DOCX, XLS, XLSX, TXT, ZIP, JPG, PNG</p>
-        </div>
-        {value.length > 0 && (
-          <span className={formBadgePrimaryClass}>
-            {value.length} file{value.length === 1 ? '' : 's'}
+        {hideTitle ? (
+          <span className={formBadgeAccentClass}>
+            {value.length} / {maxDocuments} selected
           </span>
+        ) : (
+          <>
+            <div>
+              <h4 className={formFieldTitleClass}>{label}</h4>
+              <p className={formHintClass}>PDF, DOC, DOCX, XLS, XLSX, TXT, ZIP, JPG, PNG</p>
+            </div>
+            <span className={formBadgeAccentClass}>
+              {value.length} / {maxDocuments} selected
+            </span>
+          </>
         )}
       </div>
 

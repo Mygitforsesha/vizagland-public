@@ -6,27 +6,34 @@ export const formLabelClass =
 export const formControlClass =
   'w-full h-11 min-h-[44px] rounded-lg border border-gray-200 bg-white px-3 text-[13px] font-medium text-gray-800 shadow-sm placeholder:text-gray-400 transition-colors hover:border-gray-300 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20';
 
+export const formControlErrorClass =
+  'border-gray-200 bg-red-500/[0.04] shadow-[0_1px_2px_rgba(0,0,0,0.04),0_0_0_3px_rgba(239,68,68,0.07)] ring-1 ring-red-500/15 focus:border-gray-200 focus:ring-red-500/15';
+
 export const formSelectTriggerClass =
   'w-full h-11 min-h-[44px] rounded-lg border border-gray-200 bg-white px-3 text-[13px] font-medium text-gray-800 shadow-sm transition-colors hover:border-gray-300 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/20 data-[size=default]:h-11 data-[placeholder]:text-gray-400';
 
 export const formFieldClass = 'relative flex flex-col gap-2';
 
+export const formFieldCompactClass = 'relative flex flex-col gap-0';
+
 export const formGridClass =
-  'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5';
+  'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3';
 
 export const formGrid4Class =
-  'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5';
+  'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3';
 
 export const formGrid2Class =
   'grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5';
 
 export const formSectionClass =
-  'bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-6';
+  'bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden mb-4';
+
+export const formSectionCompactClass = 'mb-4';
 
 export const formSectionHeaderClass =
   'bg-primary text-white text-sm font-bold px-5 py-3.5 tracking-wide';
 
-export const formSectionBodyClass = 'p-5 sm:p-6';
+export const formSectionBodyClass = 'p-4 sm:p-5';
 
 export const formInnerCardClass =
   'rounded-xl border border-gray-100 bg-surface p-4 sm:p-5 shadow-sm';

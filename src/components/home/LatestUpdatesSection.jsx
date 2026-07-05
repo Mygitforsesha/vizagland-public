@@ -102,13 +102,20 @@ function UpdateCard({ update }) {
   );
 }
 
-export function LatestUpdatesSection() {
+export function LatestUpdatesSection({ fillHeight = false }) {
   const reduceMotion = useReducedMotion();
   const headerVariants = getSectionHeaderMotion(reduceMotion);
 
   return (
-    <section aria-label="Latest regulations, news and infrastructure updates">
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_8px_32px_-12px_rgba(0,31,84,0.12)]">
+    <section
+      aria-label="Latest regulations, news and infrastructure updates"
+      className={fillHeight ? 'lg:h-full' : undefined}
+    >
+      <div
+        className={`overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_8px_32px_-12px_rgba(0,31,84,0.12)] ${
+          fillHeight ? 'lg:flex lg:h-full lg:flex-col' : ''
+        }`}
+      >
         <div className="h-1 bg-gradient-to-r from-primary via-primary-light to-accent" />
 
         <motion.div
@@ -141,11 +148,11 @@ export function LatestUpdatesSection() {
           </div>
         </motion.div>
 
-        <div className="bg-surface px-4 py-4">
+        <div className={`bg-surface px-4 py-4 ${fillHeight ? 'lg:flex lg:min-h-0 lg:flex-1 lg:flex-col' : ''}`}>
           <div
             className={`updates-marquee-container relative h-[480px] overflow-hidden rounded-xl border border-gray-100 bg-white/80 ${
-              reduceMotion ? 'overflow-y-auto scrollbar-hide' : ''
-            }`}
+              fillHeight ? 'lg:h-auto lg:min-h-0 lg:flex-1' : ''
+            } ${reduceMotion ? 'overflow-y-auto scrollbar-hide' : ''}`}
           >
             {!reduceMotion && (
               <>

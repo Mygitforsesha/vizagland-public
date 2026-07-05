@@ -2,13 +2,14 @@ const INDIAN_MOBILE_REGEX = /^[6-9]\d{9}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
- * Validates a mandatory Indian mobile number (10 digits, starts with 6–9).
+ * Validates an Indian mobile number when provided (10 digits, starts with 6–9).
+ * Empty values are allowed.
  */
 export function validatePhoneNumber(phone = '') {
   const trimmedPhone = phone.trim();
 
   if (!trimmedPhone) {
-    return { isValid: false, error: 'Mobile number is required' };
+    return { isValid: true, error: null };
   }
 
   if (!INDIAN_MOBILE_REGEX.test(trimmedPhone)) {
@@ -36,15 +37,55 @@ export function validateEmail(email = '') {
 }
 
 /**
- * Validates lead/customer details from PropertyLeadModal.
- * Phone is mandatory; name and email are optional.
+ * Validates username or 10-digit mobile for property submission auth.
  */
-export function validateCustomerDetails({ name = '', phone = '', email = '' } = {}) {
+export function validateUsernameOrMobile(value = '') {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return { isValid: false, error: 'Username or mobile number is required' };
+  }
+
+  if (/^\d+$/.test(trimmed)) {
+    if (!INDIAN_MOBILE_REGEX.test(trimmed)) {
+      return { isValid: false, error: 'Enter a valid 10-digit mobile number' };
+    }
+
+    return { isValid: true, error: null };
+  }
+
+  return { isValid: true, error: null };
+}
+
+/**
+ * Validates password for property submission auth.
+ */
+export function validatePassword(password = '') {
+  if (!password.trim()) {
+    return { isValid: false, error: 'Password is required' };
+  }
+
+  return { isValid: true, error: null };
+}
+
+/**
+ * Validates auth details from PropertyLeadModal.
+ */
+export function validatePropertyAuthDetails({
+  usernameOrMobile = '',
+  password = '',
+  email = '',
+} = {}) {
   const errors = {};
 
-  const phoneResult = validatePhoneNumber(phone);
-  if (!phoneResult.isValid) {
-    errors.phone = phoneResult.error;
+  const usernameResult = validateUsernameOrMobile(usernameOrMobile);
+  if (!usernameResult.isValid) {
+    errors.usernameOrMobile = usernameResult.error;
+  }
+
+  const passwordResult = validatePassword(password);
+  if (!passwordResult.isValid) {
+    errors.password = passwordResult.error;
   }
 
   const emailResult = validateEmail(email);
@@ -56,4 +97,9 @@ export function validateCustomerDetails({ name = '', phone = '', email = '' } = 
     isValid: Object.keys(errors).length === 0,
     errors,
   };
+}
+
+/** @deprecated Use validatePropertyAuthDetails */
+export function validateCustomerDetails(authDetails) {
+  return validatePropertyAuthDetails(authDetails);
 }

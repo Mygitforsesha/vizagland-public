@@ -34,6 +34,7 @@ async function compressImage(file) {
 
 export default function ImageUploadField({
   label = 'Property Images',
+  hideTitle = false,
   description = 'Drag and drop images here, or click to browse',
   value = [],
   onChange,
@@ -102,13 +103,21 @@ export default function ImageUploadField({
   return (
     <div className={cn('flex flex-col gap-4', className)}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h4 className={formFieldTitleClass}>{label}</h4>
-          <p className={formHintClass}>JPEG, PNG, WebP, GIF — up to {maxImages} images</p>
-        </div>
-        <span className={formBadgeAccentClass}>
-          {value.length} / {maxImages} selected
-        </span>
+        {hideTitle ? (
+          <span className={formBadgeAccentClass}>
+            {value.length} / {maxImages} selected
+          </span>
+        ) : (
+          <>
+            <div>
+              <h4 className={formFieldTitleClass}>{label}</h4>
+              <p className={formHintClass}>JPEG, PNG, WebP, GIF — up to {maxImages} images</p>
+            </div>
+            <span className={formBadgeAccentClass}>
+              {value.length} / {maxImages} selected
+            </span>
+          </>
+        )}
       </div>
 
       <div

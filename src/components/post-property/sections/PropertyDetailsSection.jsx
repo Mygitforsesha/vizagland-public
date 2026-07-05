@@ -10,12 +10,10 @@ import {
   FloorNumberSelectField,
   FurnishingSelectField,
   PropertyAgeSelectField,
-  TotalFloorsSelectField,
 } from '@/components/post-property/fields';
 import { formGrid4Class } from '@/components/post-property/formStyles';
 import {
   lpPlotOptions,
-  pricePerSqftOptions,
   priceRangeOptions,
   propertyUnderOptions,
   yearOptions,
@@ -27,105 +25,141 @@ export default function PropertyDetailsSection({
   dynamicAreaUnitOptions,
 }) {
   return (
-    <FormSection title="Property Details">
+    <FormSection>
       <div className={formGrid4Class}>
+        <FormTextField
+          hideLabel
+          value={formState.projectName}
+          onChange={(event) => updateField('projectName', event.target.value)}
+          placeholder="Enter Project / Property Name"
+        />
         <SearchableSelectField
-          label="LP Number"
-          placeholder="Select LP Number"
-          searchPlaceholder="Search LP Number..."
+          hideLabel
+          placeholder="Select LP No / B.P.A No"
+          searchPlaceholder="Search LP No / B.P.A No..."
           value={formState.lpNo}
           onValueChange={(value) => updateField('lpNo', value)}
           options={lpPlotOptions}
         />
         <SearchableSelectField
-          label="LP No. Year"
-          placeholder="Select LP No. Year"
-          searchPlaceholder="Search LP No. Year..."
+          hideLabel
+          placeholder="Select LP No / B.P.A No Year"
+          searchPlaceholder="Search LP No / B.P.A No Year..."
           value={formState.year}
           onValueChange={(value) => updateField('year', value)}
           options={yearOptions}
         />
-        <PropertyTypeSelectField
-          label="Price per Sq Ft"
-          placeholder="Select"
-          value={formState.pricePerSqft}
-          onValueChange={(value) => updateField('pricePerSqft', value)}
-          options={pricePerSqftOptions}
-        />
         <FormTextField
-          label="Price (Value)"
+          hideLabel
           type="number"
-          value={formState.priceValue}
-          onChange={(event) => updateField('priceValue', event.target.value)}
-          placeholder="Enter value"
-        />
-        <PropertyTypeSelectField
-          label="Price Range"
-          placeholder="Select Price"
-          value={formState.priceRange}
-          onValueChange={(value) => updateField('priceRange', value)}
-          options={priceRangeOptions}
+          value={formState.totalFloors}
+          onChange={(event) => updateField('totalFloors', event.target.value)}
+          placeholder="Enter Total Floors / Total Plots"
         />
         <FormTextField
-          label="Area"
+          hideLabel
+          value={formState.blockPhase}
+          onChange={(event) => updateField('blockPhase', event.target.value)}
+          placeholder="Enter Block No / Phase (1-10)"
+        />
+        <FormTextField
+          hideLabel
+          value={formState.plotNo}
+          onChange={(event) => updateField('plotNo', event.target.value)}
+          placeholder="Enter Plot No / D.No. / Flat No"
+        />
+        <FloorNumberSelectField
+          hideLabel
+          placeholder="Select Floor No"
+          value={formState.floorNumber}
+          onValueChange={(value) => updateField('floorNumber', value)}
+        />
+        <FacingField
+          hideLabel
+          placeholder="Select Facing"
+          value={formState.facing}
+          onValueChange={(value) => updateField('facing', value)}
+        />
+        <FormTextField
+          hideLabel
           type="number"
           value={formState.areaValue}
           onChange={(event) => updateField('areaValue', event.target.value)}
-          placeholder="Enter area"
+          placeholder="Enter Area"
         />
         <AreaUnitSelectField
+          hideLabel
+          placeholder="Select Area Unit"
           value={formState.areaUnit}
           onValueChange={(value) => updateField('areaUnit', value)}
           options={dynamicAreaUnitOptions}
         />
-        <TotalFloorsSelectField
-          value={formState.totalFloors}
-          onValueChange={(value) => updateField('totalFloors', value)}
+        <FormTextField
+          hideLabel
+          type="number"
+          value={formState.priceValue}
+          onChange={(event) => updateField('priceValue', event.target.value)}
+          placeholder="Enter Price"
         />
-        <FloorNumberSelectField
-          value={formState.floorNumber}
-          onValueChange={(value) => updateField('floorNumber', value)}
+        <PropertyTypeSelectField
+          hideLabel
+          placeholder="Select Price Range"
+          value={formState.priceRange}
+          onValueChange={(value) => updateField('priceRange', value)}
+          options={priceRangeOptions}
         />
         <PropertyAgeSelectField
+          hideLabel
+          placeholder="Select Property Age"
           value={formState.propertyAge}
           onValueChange={(value) => updateField('propertyAge', value)}
         />
-        <FormTextField
-          label="Flat No./Door No."
-          value={formState.propertyFlatDoorNo}
-          onChange={(event) => updateField('propertyFlatDoorNo', event.target.value)}
-          placeholder="Enter flat or door number"
-        />
         <BedroomsSelectField
+          hideLabel
+          placeholder="Select Bed Room"
           value={formState.bedRooms}
           onValueChange={(value) => updateField('bedRooms', value)}
         />
-        <FacingField
-          value={formState.facing}
-          onValueChange={(value) => updateField('facing', value)}
-        />
-        <SearchableSelectField
-          label="Plot No."
-          placeholder="Select Plot No."
-          searchPlaceholder="Search Plot No..."
-          value={formState.plotNo}
-          onValueChange={(value) => updateField('plotNo', value)}
-          options={lpPlotOptions}
-        />
         <FurnishingSelectField
+          hideLabel
+          placeholder="Select Furnishing"
           value={formState.furnishing}
           onValueChange={(value) => updateField('furnishing', value)}
         />
         <PropertyTypeSelectField
-          label="Property Under"
-          placeholder="Select"
+          hideLabel
+          placeholder="Select Property Falls Under"
           value={formState.propertyUnder}
           onValueChange={(value) => updateField('propertyUnder', value)}
           options={propertyUnderOptions}
         />
         <ApprovalField
+          hideLabel
+          placeholder="Select Approved By"
           value={formState.approvedBy}
           onValueChange={(value) => updateField('approvedBy', value)}
+        />
+        <SearchableSelectField
+          hideLabel
+          placeholder="Select Document No"
+          searchPlaceholder="Search Document No..."
+          value={formState.documentNo}
+          onValueChange={(value) => updateField('documentNo', value)}
+          options={lpPlotOptions}
+        />
+        <SearchableSelectField
+          hideLabel
+          placeholder="Select Document Year"
+          searchPlaceholder="Search Document Year..."
+          value={formState.documentYear}
+          onValueChange={(value) => updateField('documentYear', value)}
+          options={yearOptions}
+        />
+        <FormTextField
+          hideLabel
+          value={formState.registrationOfficeArea}
+          onChange={(event) => updateField('registrationOfficeArea', event.target.value)}
+          placeholder="Enter Registered Office Area"
         />
       </div>
     </FormSection>

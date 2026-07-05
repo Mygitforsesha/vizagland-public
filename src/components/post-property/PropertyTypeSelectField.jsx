@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import {
   formFieldClass,
+  formFieldCompactClass,
   formLabelClass,
   formSelectContentClass,
   formSelectTriggerClass,
@@ -16,27 +17,35 @@ import {
 
 export default function PropertyTypeSelectField({
   label,
+  hideLabel = false,
+  id,
   placeholder,
   value,
   onValueChange,
   options,
   className,
 }) {
-  const fieldId = label.replace(/\s+/g, '-').toLowerCase();
+  const fieldId =
+    id ??
+    (label ? label.replace(/\s+/g, '-').toLowerCase() : undefined) ??
+    `select-${placeholder?.replace(/\s+/g, '-').toLowerCase() ?? 'field'}`;
+  const ariaLabel = label ?? placeholder;
   const [open, setOpen] = useState(false);
 
   return (
-    <div className={cn(formFieldClass, open && 'z-[60]', className)}>
-      <label htmlFor={fieldId} className={formLabelClass}>
-        {label}
-      </label>
+    <div className={cn(hideLabel ? formFieldCompactClass : formFieldClass, open && 'z-[60]', className)}>
+      {!hideLabel && label ? (
+        <label htmlFor={fieldId} className={formLabelClass}>
+          {label}
+        </label>
+      ) : null}
       <Select
         open={open}
         onOpenChange={setOpen}
         value={value || undefined}
         onValueChange={onValueChange}
       >
-        <SelectTrigger id={fieldId} className={formSelectTriggerClass} aria-label={label}>
+        <SelectTrigger id={fieldId} className={formSelectTriggerClass} aria-label={ariaLabel}>
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent

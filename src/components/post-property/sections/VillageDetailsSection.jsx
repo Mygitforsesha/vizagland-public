@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import FormSection from '@/components/post-property/FormSection';
 import FormTextField from '@/components/post-property/FormTextField';
 import PropertyTypeSelectField from '@/components/post-property/PropertyTypeSelectField';
@@ -7,12 +8,17 @@ import { nearbyLocationOptions } from '@/lib/post-property/formOptions';
 import {
   applyMasterLocationToForm,
   clearLocationFields,
+  resolveNearbyLocationOptions,
 } from '@/lib/post-property/mapMasterLocationToForm';
 import { useMasterLocationSearch } from '@/lib/post-property/useMasterLocationSearch';
 
 export default function VillageDetailsSection({ formState, updateField, postMode = 'owner' }) {
   const hideAgentFields = postMode === 'agent';
   const { setQuery, options, loading, error } = useMasterLocationSearch();
+  const nearbyOptions = useMemo(
+    () => resolveNearbyLocationOptions(nearbyLocationOptions, formState.nearbyLocation),
+    [formState.nearbyLocation],
+  );
 
   function handleVillageChange(value) {
     if (!value) {
@@ -30,11 +36,11 @@ export default function VillageDetailsSection({ formState, updateField, postMode
   }
 
   return (
-    <FormSection title="Village Details">
+    <FormSection>
       <div className={formGridClass}>
         <SearchableSelectField
-          label="Village"
-          placeholder="Search village name"
+          hideLabel
+          placeholder="Select Village"
           searchPlaceholder="Type to search village..."
           value={formState.village}
           onValueChange={handleVillageChange}
@@ -47,55 +53,55 @@ export default function VillageDetailsSection({ formState, updateField, postMode
           clearable
         />
         <PropertyTypeSelectField
-          label="Nearby Location / Landmark"
+          hideLabel
           placeholder="Select Nearby Location"
           value={formState.nearbyLocation}
           onValueChange={(value) => updateField('nearbyLocation', value)}
-          options={nearbyLocationOptions}
+          options={nearbyOptions}
         />
         <div className={hideAgentFields ? 'hidden' : undefined}>
           <FormTextField
-            label="Add Nearby Location"
+            hideLabel
             value={formState.customNearby}
             onChange={(event) => updateField('customNearby', event.target.value)}
-            placeholder="Enter nearby location"
+            placeholder="Enter Nearby Location"
           />
         </div>
         <div className={hideAgentFields ? 'hidden' : undefined}>
           <FormTextField
-            label="District"
+            hideLabel
             value={formState.district}
             onChange={(event) => updateField('district', event.target.value)}
-            placeholder="Enter district"
+            placeholder="Enter District"
           />
         </div>
         <div className={hideAgentFields ? 'hidden' : undefined}>
           <FormTextField
-            label="Mandal"
+            hideLabel
             value={formState.mandal}
             onChange={(event) => updateField('mandal', event.target.value)}
-            placeholder="Enter mandal"
+            placeholder="Enter Mandal"
           />
         </div>
         <div className={hideAgentFields ? 'hidden' : undefined}>
           <FormTextField
-            label="Panchayati / sachivalayam"
+            hideLabel
             value={formState.panchayati}
             onChange={(event) => updateField('panchayati', event.target.value)}
-            placeholder="Enter panchayati"
+            placeholder="Enter Panchayati / Sachivalayam"
           />
         </div>
         <div className={hideAgentFields ? 'hidden' : undefined}>
           <FormTextField
-            label="GVMC Zone, Ward Number"
+            hideLabel
             value={formState.gvmc}
             onChange={(event) => updateField('gvmc', event.target.value)}
-            placeholder="Enter GVMC zone / ward"
+            placeholder="Enter GVMC Zone / Ward Number"
           />
         </div>
         <div className={hideAgentFields ? 'hidden' : undefined}>
           <FormTextField
-            label="VMRDA"
+            hideLabel
             value={formState.vmrda}
             onChange={(event) => updateField('vmrda', event.target.value)}
             placeholder="Enter VMRDA"
@@ -103,15 +109,15 @@ export default function VillageDetailsSection({ formState, updateField, postMode
         </div>
         <div className={hideAgentFields ? 'hidden' : undefined}>
           <FormTextField
-            label="Register office location"
+            hideLabel
             value={formState.regArea}
             onChange={(event) => updateField('regArea', event.target.value)}
-            placeholder="Enter register office"
+            placeholder="Enter Register Office Location"
           />
         </div>
         <div className={hideAgentFields ? 'hidden' : undefined}>
           <FormTextField
-            label="GVMC / VMRDA"
+            hideLabel
             value={formState.gvmcVmrda}
             onChange={(event) => updateField('gvmcVmrda', event.target.value)}
             placeholder="Enter GVMC / VMRDA"

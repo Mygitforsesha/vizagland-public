@@ -8,7 +8,7 @@ import {
 export default function FormSection({ title, children, className, bodyClassName }) {
   return (
     <section className={cn(formSectionClass, className)}>
-      <header className={formSectionHeaderClass}>{title}</header>
+      {title ? <header className={formSectionHeaderClass}>{title}</header> : null}
       <div className={cn(formSectionBodyClass, bodyClassName)}>{children}</div>
     </section>
   );

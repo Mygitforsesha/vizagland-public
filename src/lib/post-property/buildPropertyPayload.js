@@ -66,11 +66,25 @@ export function buildPropertyPayload({ formState, customer, referenceId }) {
     property_group_and_types: buildPropertyGroupAndTypesPayload(formState.propertyCategory),
 
     property_details: {
-      property_price: formState.priceValue
-        ? Number(formState.priceValue)
+      property_project_name: formState.projectName ?? '',
+
+      property_lp_no: formState.lpNo ?? '',
+
+      property_year: formState.year
+        ? Number(formState.year)
         : null,
 
-      property_price_range: formState.priceRange ?? '',
+      property_total_floors: formState.totalFloors
+        ? Number(formState.totalFloors)
+        : null,
+
+      property_block_phase: formState.blockPhase ?? '',
+
+      property_plot_no: formState.plotNo ?? '',
+
+      property_floor_number: formState.floorNumber ?? '',
+
+      property_facing: formState.facing ?? '',
 
       property_area: formState.areaValue
         ? Number(formState.areaValue)
@@ -78,41 +92,39 @@ export function buildPropertyPayload({ formState, customer, referenceId }) {
 
       property_area_unit: formState.areaUnit ?? '',
 
-      property_price_per_sqft: formState.pricePerSqft ?? '',
+      property_price: formState.priceValue
+        ? Number(formState.priceValue)
+        : null,
+
+      property_price_range: formState.priceRange ?? '',
 
       property_age: formState.propertyAge ?? '',
 
-      property_facing: formState.facing ?? '',
-
-      property_total_floors: formState.totalFloors
-        ? Number(formState.totalFloors)
+      property_bedrooms: formState.bedRooms
+        ? Number(formState.bedRooms)
         : null,
-
-      property_floor_number: formState.floorNumber ?? '',
 
       property_furnishing: formState.furnishing ?? '',
 
       property_under: formState.propertyUnder ?? '',
 
-      property_lp_no: formState.lpNo ?? '',
+      property_document_no: formState.documentNo ?? '',
 
-      property_plot_no: formState.plotNo ?? '',
+      property_document_year: formState.documentYear
+        ? Number(formState.documentYear)
+        : null,
+
+      property_registration_office_area: formState.registrationOfficeArea ?? '',
+
+      property_price_per_sqft: formState.pricePerSqft ?? '',
 
       property_flat_door_no: formState.propertyFlatDoorNo ?? '',
-
-      property_year: formState.year
-        ? Number(formState.year)
-        : null,
-
-      property_bedrooms: formState.bedRooms
-        ? Number(formState.bedRooms)
-        : null,
     },
 
-    property_owner: {
-      property_owner_name: customer?.name?.trim() ?? '',
-      property_owner_phone: customer?.phone?.trim() ?? '',
-      property_owner_email: customer?.email?.trim() ?? '',
+    property_auth: {
+      username_or_mobile: customer?.usernameOrMobile?.trim() ?? '',
+      password: customer?.password ?? '',
+      email: customer?.email?.trim() ?? '',
     },
 
     property_other_services: {
@@ -120,6 +132,11 @@ export function buildPropertyPayload({ formState, customer, referenceId }) {
       property_youtube_video_link: formState.youtubeVideoLink ?? '',
       property_location_link: formState.propertyLocationLink ?? '',
     },
+
+    property_contact_numbers: (formState.propertyContactNumbers ?? []).map((row) => ({
+      registration_type: row.registrationType ?? '',
+      phone_number: row.phoneNumber?.trim() ?? '',
+    })),
 
     // FUTURE:
     // Persist PropertyImages metadata when media services are available.

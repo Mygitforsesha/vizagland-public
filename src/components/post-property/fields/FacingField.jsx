@@ -14,7 +14,8 @@ export default function FacingField({
   variant = 'select',
   options,
   label = 'Facing',
-  placeholder = 'Select',
+  hideLabel = false,
+  placeholder = 'Select Facing',
   className,
   allowAll = false,
 }) {
@@ -63,6 +64,7 @@ export default function FacingField({
   return (
     <PropertyTypeSelectField
       label={label}
+      hideLabel={hideLabel}
       placeholder={placeholder}
       value={allowAll ? toEmptySelectValue(value) : value || ''}
       onValueChange={(next) =>

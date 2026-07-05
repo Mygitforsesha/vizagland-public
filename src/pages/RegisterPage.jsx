@@ -18,30 +18,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { filterOptionsByPrefix } from '@/components/post-property/SearchableSelectField';
+import ThemedSearchableDropdown, {
+  ThemedDropdown,
+  VILLAGE_DROPDOWN_TRIGGER_CLASS,
+} from '@/components/shared/ThemedSearchableDropdown';
 import { ROUTES } from '@/constants/routes';
+import {
+  registrationTypeOptions,
+  registrationTypeRegistry,
+} from '@/lib/registration/registrationTypeOptions';
 import { captureUserLocation } from '@/services/locationService';
 
 const REGISTER_API_URL = 'https://api.vizagland.com/api/auth/register';
 const TOAST_DISPLAY_MS = 2000;
-
-const REGISTRATION_TYPES = [
-  { group: 'Owner / Agent', items: ['Buyer', 'Seller', 'Owner', 'Owner Relative', 'Owner Friend', 'Realtor', 'Agent', 'Employee', 'Marketing Person', 'Promoter', 'Company', 'Builder', 'Developer', 'NRI'] },
-  { group: 'Professional', items: ['Civil Engineer', 'Architect', 'Structural Engineer', 'Software Engineer', 'Advocate'] },
-  { group: 'Membership', items: ['Diamond Member', 'Gold Member', 'Platinum Member', 'Bronze Member'] },
-  { group: 'Media', items: ['Eenadu', 'Sakshi', 'Vaartha', 'Andhra Jyothi', 'Hindu', 'Indian Express'] },
-  { group: 'Social Media', items: ['Facebook', 'Twitter', 'Instagram', 'YouTube', 'WhatsApp', 'Telegram', 'Social Media'] },
-  { group: 'Other', items: ['Others'] },
-];
-
-const REGISTRATION_GROUP_KEYS = {
-  Membership: 'membership',
-  'Owner / Agent': 'roles',
-  Professional: 'professional',
-  Media: 'media',
-  'Social Media': 'socialMedia',
-  Other: 'other',
-};
 
 const EMPTY_REGISTRATION_TYPE_STATE = {
   membership: '',
@@ -52,84 +41,40 @@ const EMPTY_REGISTRATION_TYPE_STATE = {
   other: [],
 };
 
-function buildRegistrationTypeRegistry() {
-  const byValue = new Map();
+function getSelectedRegistrationTypeValue(formData) {
+  if (formData.membership) return formData.membership;
 
-  for (const group of REGISTRATION_TYPES) {
-    const stateKey = REGISTRATION_GROUP_KEYS[group.group];
-
-    for (const item of group.items) {
-      if (byValue.has(item)) continue;
-
-      byValue.set(item, {
-        label: item,
-        value: item,
-        stateKey,
-      });
-    }
+  for (const key of ['roles', 'professional', 'media', 'socialMedia', 'other']) {
+    const selectedValue = formData[key]?.[0];
+    if (selectedValue) return selectedValue;
   }
 
-  return byValue;
+  return '';
 }
 
-const registrationTypeRegistry = buildRegistrationTypeRegistry();
+function applyRegistrationTypeSelection(previousState, value) {
+  const nextState = {
+    ...previousState,
+    ...EMPTY_REGISTRATION_TYPE_STATE,
+  };
 
-const REGISTRATION_TYPE_DISPLAY_ORDER = [
-  'Buyer',
-  'Seller',
-  'Owner',
-  'Owner Relative',
-  'Owner Friend',
-  'Realtor',
-  'Civil Engineer',
-  'Structural Engineer',
-  'Architect',
-  'Software Engineer',
-  'NRI',
-  'Advocate',
-  'Diamond Member',
-  'Gold Member',
-  'Platinum Member',
-  'Bronze Member',
-  'Eenadu',
-  'Sakshi',
-  'Vaartha',
-  'Andhra Jyothi',
-  'Hindu',
-  'Indian Express',
-  'Facebook',
-  'Twitter',
-  'Instagram',
-  'YouTube',
-  'WhatsApp',
-  'Telegram',
-];
-
-function buildRegistrationTypeOptions(registry) {
-  const seen = new Set();
-  const ordered = [];
-
-  for (const value of REGISTRATION_TYPE_DISPLAY_ORDER) {
-    const option = registry.get(value);
-    if (!option || seen.has(value)) continue;
-    ordered.push(option);
-    seen.add(value);
+  if (!value) {
+    return nextState;
   }
 
-  for (const group of REGISTRATION_TYPES) {
-    for (const item of group.items) {
-      if (seen.has(item)) continue;
-      const option = registry.get(item);
-      if (!option) continue;
-      ordered.push(option);
-      seen.add(item);
-    }
+  const match = registrationTypeRegistry.get(value);
+  if (!match) {
+    return nextState;
   }
 
-  return ordered;
+  if (match.stateKey === 'membership') {
+    nextState.membership = value;
+  } else {
+    nextState[match.stateKey] = [value];
+  }
+
+  return nextState;
 }
-
-const registrationTypeOptions = buildRegistrationTypeOptions(registrationTypeRegistry);
 
 const INITIAL_FORM_DATA = {
   membership: '',
@@ -248,41 +193,6 @@ function hasRegistrationTypeSelection(formData) {
   return getAllSelectedTypes(formData).length > 0 || formData.other.includes('Others');
 }
 
-function getSelectedRegistrationTypeValue(formData) {
-  if (formData.membership) return formData.membership;
-
-  for (const key of ['roles', 'professional', 'media', 'socialMedia', 'other']) {
-    const selectedValue = formData[key]?.[0];
-    if (selectedValue) return selectedValue;
-  }
-
-  return '';
-}
-
-function applyRegistrationTypeSelection(previousState, value) {
-  const nextState = {
-    ...previousState,
-    ...EMPTY_REGISTRATION_TYPE_STATE,
-  };
-
-  if (!value) {
-    return nextState;
-  }
-
-  const match = registrationTypeRegistry.get(value);
-  if (!match) {
-    return nextState;
-  }
-
-  if (match.stateKey === 'membership') {
-    nextState.membership = value;
-  } else {
-    nextState[match.stateKey] = [value];
-  }
-
-  return nextState;
-}
-
 function trimString(value) {
   return typeof value === 'string' ? value.trim() : '';
 }
@@ -359,156 +269,6 @@ function getDobYearOptions(currentYear) {
 
 const CALENDAR_DROPDOWN_TRIGGER_CLASS =
   'h-8 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-2.5 text-[12px] font-semibold text-primary shadow-sm transition-colors hover:border-primary hover:bg-accent-light/40 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 data-[size=default]:h-8 [&_svg]:text-gray-400 data-[placeholder]:text-gray-400';
-
-const VILLAGE_DROPDOWN_TRIGGER_CLASS =
-  'h-10 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 text-[13px] font-medium text-gray-900 shadow-sm transition-colors hover:border-primary hover:bg-accent-light/40 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 data-[size=default]:h-10 [&_svg]:text-gray-400 data-[placeholder]:text-gray-400';
-
-const THEMED_DROPDOWN_CONTENT_CLASS =
-  'z-[260] max-h-52 rounded-xl border border-gray-200 bg-white p-1 shadow-lg';
-
-const THEMED_DROPDOWN_ITEM_CLASS =
-  'rounded-md py-2 pl-2.5 pr-8 text-[13px] text-gray-700 transition-colors focus:bg-accent-light focus:text-primary data-[state=checked]:bg-primary/10 data-[state=checked]:font-semibold data-[state=checked]:text-primary [&_svg]:text-primary';
-
-function ThemedDropdown({
-  id,
-  ariaLabel,
-  value,
-  onValueChange,
-  options,
-  placeholder,
-  triggerClassName,
-  className = '',
-}) {
-  return (
-    <Select value={value || undefined} onValueChange={onValueChange}>
-      <SelectTrigger
-        id={id}
-        aria-label={ariaLabel}
-        className={`${triggerClassName} ${className}`}
-      >
-        <SelectValue placeholder={placeholder} className="truncate" />
-      </SelectTrigger>
-      <SelectContent
-        position="popper"
-        align="start"
-        sideOffset={4}
-        className={THEMED_DROPDOWN_CONTENT_CLASS}
-      >
-        {options.map((option) => (
-          <SelectItem
-            key={option.value}
-            value={option.value}
-            disabled={option.disabled}
-            className={THEMED_DROPDOWN_ITEM_CLASS}
-          >
-            {option.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-function ThemedSearchableDropdown({
-  id,
-  ariaLabel,
-  label,
-  value,
-  onValueChange,
-  options,
-  placeholder,
-  searchPlaceholder,
-  triggerClassName,
-  className = '',
-  required = false,
-  hasError = false,
-  onOpenChange,
-}) {
-  const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-
-  const filteredOptions = useMemo(
-    () => filterOptionsByPrefix(options, search),
-    [options, search],
-  );
-
-  const selectedLabel =
-    options.find((option) => option.value === value)?.label ?? value;
-
-  const showErrorState = hasError && !open;
-
-  function handleOpenChange(nextOpen) {
-    setOpen(nextOpen);
-    onOpenChange?.(nextOpen);
-    if (!nextOpen) setSearch('');
-  }
-
-  return (
-    <div className={`${REGISTRATION_TYPE_FIELD_CLASS} ${open ? 'z-[60]' : ''} ${className}`}>
-      <label htmlFor={id} className={REGISTRATION_TYPE_LABEL_CLASS}>
-        {label}
-        {required ? <span className="text-red-500"> *</span> : null}
-      </label>
-      <Popover open={open} onOpenChange={handleOpenChange}>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            id={id}
-            aria-label={ariaLabel}
-            aria-expanded={open}
-            aria-invalid={showErrorState ? true : undefined}
-            className={`${triggerClassName} flex items-center justify-between gap-2 text-left transition-all duration-200 ${
-              showErrorState ? REGISTRATION_TYPE_ERROR_TRIGGER_CLASS : ''
-            }`}
-          >
-            <span className={`truncate ${!value ? 'text-gray-400' : ''}`}>
-              {value ? selectedLabel : placeholder}
-            </span>
-            <ChevronDown
-              className={`size-4 shrink-0 text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}
-              aria-hidden
-            />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          align="start"
-          sideOffset={6}
-          onOpenAutoFocus={(event) => event.preventDefault()}
-          className={`${THEMED_DROPDOWN_CONTENT_CLASS} z-[260] w-[var(--radix-popover-trigger-width)] p-0`}
-        >
-          <Command shouldFilter={false}>
-            <CommandInput
-              placeholder={searchPlaceholder}
-              value={search}
-              onValueChange={setSearch}
-            />
-            <CommandList className="max-h-72">
-              <CommandEmpty>No results found.</CommandEmpty>
-              <CommandGroup>
-                {filteredOptions.map((option) => (
-                  <CommandItem
-                    key={option.value}
-                    value={option.value}
-                    onSelect={() => {
-                      onValueChange(option.value);
-                      handleOpenChange(false);
-                    }}
-                    className={`cursor-pointer ${value === option.value ? 'bg-primary/10 font-semibold text-primary' : ''}`}
-                  >
-                    <span className="truncate">{option.label}</span>
-                    {value === option.value && (
-                      <Check className="ml-auto size-4 text-primary" aria-hidden />
-                    )}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
-  );
-}
 
 function DateOfBirthPicker({ day, month, year, onChange }) {
   const [open, setOpen] = useState(false);
@@ -837,6 +597,8 @@ function RegistrationTypeStep({
               placeholder="Select Registration Type"
               searchPlaceholder="Search registration type..."
               triggerClassName={VILLAGE_DROPDOWN_TRIGGER_CLASS}
+              wrapperClassName={REGISTRATION_TYPE_FIELD_CLASS}
+              labelClassName={REGISTRATION_TYPE_LABEL_CLASS}
               className="w-full"
             />
           </div>

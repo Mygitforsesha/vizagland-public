@@ -22,12 +22,15 @@ function createSpecSelectField({
     options = defaultOptions,
     allowAll = false,
     className,
+    hideLabel = false,
+    placeholder: placeholderOverride,
     ...rest
   }) {
     return (
       <FilterSelectField
         label={label}
-        placeholder={allowAll ? allLabel : placeholder}
+        hideLabel={hideLabel}
+        placeholder={placeholderOverride ?? (allowAll ? allLabel : placeholder)}
         value={value}
         onValueChange={onValueChange}
         options={options}

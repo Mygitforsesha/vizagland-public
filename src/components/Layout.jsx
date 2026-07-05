@@ -17,13 +17,52 @@ const SERVICE_ITEMS = [
   { label: '1B', icon: Hash },
 ];
 
+const COMPANY_NAME = "Nauka Global Engineer's Group";
+
+const MOBILE_COMPACT_SCROLL_THRESHOLD = 64;
+const MOBILE_MAX_WIDTH_PX = 639;
+
+const POST_PROPERTY_LINK_CLASS =
+  'border-2 border-accent text-accent text-[11px] sm:text-[13px] font-semibold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-md bg-transparent hover:bg-accent hover:text-white transition-colors no-underline';
+
+const POST_PROPERTY_COMPACT_LINK_CLASS =
+  'inline-flex shrink-0 items-center border-2 border-accent text-accent text-[11px] font-semibold px-3 py-2 rounded-md bg-transparent hover:bg-accent hover:text-white transition-colors no-underline whitespace-nowrap';
+
 export function Layout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isMobileCompact, setIsMobileCompact] = useState(false);
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
+  useEffect(() => {
+    function updateCompactHeader() {
+      const isMobileViewport = window.innerWidth <= MOBILE_MAX_WIDTH_PX;
+      if (!isHomePage || !isMobileViewport) {
+        setIsMobileCompact(false);
+        return;
+      }
+
+      setIsMobileCompact(window.scrollY > MOBILE_COMPACT_SCROLL_THRESHOLD);
+    }
+
+    updateCompactHeader();
+    window.addEventListener('scroll', updateCompactHeader, { passive: true });
+    window.addEventListener('resize', updateCompactHeader);
+
+    return () => {
+      window.removeEventListener('scroll', updateCompactHeader);
+      window.removeEventListener('resize', updateCompactHeader);
+    };
+  }, [isHomePage]);
 
   return (
     <div className="min-h-screen flex flex-col">
       <TopBar />
-      <Header mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <Header
+        mobileOpen={mobileOpen}
+        setMobileOpen={setMobileOpen}
+        isMobileCompact={isMobileCompact}
+      />
       <Navigation mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <main className="flex-1">{children}</main>
       <Footer />
@@ -52,41 +91,120 @@ function TopBar() {
   );
 }
 
-function Header({ mobileOpen, setMobileOpen }) {
-  const postPropertyLinkClass =
-    'border-2 border-accent text-accent text-[11px] sm:text-[13px] font-semibold px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-md bg-transparent hover:bg-accent hover:text-white transition-colors no-underline';
-
+function Header({ mobileOpen, setMobileOpen, isMobileCompact }) {
   return (
-    <header className="bg-white sticky top-0 z-50 shadow-sm lg:border-b lg:border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 py-3">
+    <header className="sticky top-0 z-50 bg-white shadow-sm lg:border-b lg:border-gray-200">
+      {/* Tablet + Desktop branding */}
+      <div className="hidden max-w-7xl mx-auto px-4 py-3 sm:block">
         <div className="flex items-center justify-between gap-3">
           <Link to="/" className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 no-underline lg:flex-initial">
-            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-accent rounded-lg flex items-center justify-center text-white font-black text-sm sm:text-base flex-shrink-0">VL</div>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-sm font-black text-white sm:h-11 sm:w-11 sm:text-base">
+              VL
+            </div>
             <div className="min-w-0">
-              <h1 className="text-primary font-extrabold text-base sm:text-lg leading-tight m-0">Nauka Global Engineer's Group</h1>
-              <p className="text-gray-500 text-[11px] sm:text-[11px] m-0 leading-snug font-bold">GVMC & VMRDA Vizag LICENCED Civil  Structural Engineers , Architects Builders , Developers .Realtors ,DRONE,DGPS Surveyors, Group.</p>
+              <h1 className="m-0 text-base font-extrabold leading-tight text-primary sm:text-lg">
+                {COMPANY_NAME}
+              </h1>
+              <p className="m-0 text-[11px] font-bold leading-snug text-gray-500">
+                GVMC & VMRDA Vizag LICENCED Civil  Structural Engineers , Architects Builders , Developers .Realtors ,DRONE,DGPS Surveyors, Group.
+              </p>
             </div>
           </Link>
-          <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
-            <Link to="/post-property" className={postPropertyLinkClass}>
+          <div className="hidden shrink-0 items-center gap-2 lg:flex">
+            <Link to="/post-property" className={POST_PROPERTY_LINK_CLASS}>
               Post Property
             </Link>
           </div>
         </div>
       </div>
 
-      <div className="lg:hidden border-b-2 border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+      {/* Mobile branding — collapses on scroll (homepage only) */}
+      <div
+        className={`overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out sm:hidden ${
+          isMobileCompact ? 'max-h-0 -translate-y-1 opacity-0' : 'max-h-48 translate-y-0 opacity-100'
+        }`}
+      >
+        <div className="mx-auto max-w-7xl px-4 py-3">
+          <Link to="/" className="flex min-w-0 items-center gap-2 no-underline">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-sm font-black text-white">
+              VL
+            </div>
+            <div className="min-w-0">
+              <h1 className="m-0 text-base font-extrabold leading-tight text-primary">
+                {COMPANY_NAME}
+              </h1>
+              <p className="m-0 text-[11px] font-bold leading-snug text-gray-500">
+                GVMC & VMRDA Vizag LICENCED Civil  Structural Engineers , Architects Builders , Developers .Realtors ,DRONE,DGPS Surveyors, Group.
+              </p>
+            </div>
+          </Link>
+        </div>
+      </div>
+
+      {/* Tablet navigation row — unchanged */}
+      <div className="hidden border-b-2 border-gray-200 sm:flex lg:hidden">
+        <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-4">
           <button
             type="button"
             onClick={() => setMobileOpen((open) => !open)}
-            className="p-2 text-primary border-0 bg-transparent cursor-pointer"
+            className="cursor-pointer border-0 bg-transparent p-2 text-primary"
             aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={mobileOpen}
           >
             {mobileOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
-          <Link to="/post-property" className={postPropertyLinkClass}>
+          <Link to="/post-property" className={POST_PROPERTY_LINK_CLASS}>
+            Post Property
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile full navigation row */}
+      <div
+        className={`border-b-2 border-gray-200 transition-opacity duration-300 ease-out sm:hidden ${
+          isMobileCompact ? 'pointer-events-none hidden opacity-0' : 'block opacity-100'
+        }`}
+      >
+        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+          <button
+            type="button"
+            onClick={() => setMobileOpen((open) => !open)}
+            className="cursor-pointer border-0 bg-transparent p-2 text-primary"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+          </button>
+          <Link to="/post-property" className={POST_PROPERTY_LINK_CLASS}>
+            Post Property
+          </Link>
+        </div>
+      </div>
+
+      {/* Mobile compact navigation row */}
+      <div
+        className={`border-b border-gray-200 transition-opacity duration-300 ease-out sm:hidden ${
+          isMobileCompact ? 'block opacity-100' : 'hidden opacity-0'
+        }`}
+      >
+        <div className="mx-auto flex min-h-14 max-w-7xl items-center gap-3 px-4 py-2.5">
+          <button
+            type="button"
+            onClick={() => setMobileOpen((open) => !open)}
+            className="flex shrink-0 items-center justify-center rounded-md border-0 bg-transparent p-2 text-primary"
+            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <Link
+            to="/"
+            className="min-w-0 flex-1 truncate px-0.5 text-sm font-semibold leading-tight text-primary no-underline"
+            title={COMPANY_NAME}
+          >
+            {COMPANY_NAME}
+          </Link>
+          <Link to="/post-property" className={POST_PROPERTY_COMPACT_LINK_CLASS}>
             Post Property
           </Link>
         </div>
@@ -248,7 +366,7 @@ function Footer() {
               <li><Link to="/listings?type=Villa" className="text-gray-400 no-underline text-[13px] hover:text-white transition-colors">Villas</Link></li>
               <li><Link to="/listings?type=Plot" className="text-gray-400 no-underline text-[13px] hover:text-white transition-colors">Plots</Link></li>
               <li><Link to="/listings?type=Commercial" className="text-gray-400 no-underline text-[13px] hover:text-white transition-colors">Commercial</Link></li>
-              <li><Link to="/listings?type=Land" className="text-gray-400 no-underline text-[13px] hover:text-white transition-colors">Farm Land</Link></li>
+              <li><Link to="/listings?type=Land" className="text-gray-400 no-underline text-[13px] hover:text-white transition-colors">Firm Land</Link></li>
             </ul>
           </div>
           <div>

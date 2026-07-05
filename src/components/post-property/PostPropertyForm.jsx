@@ -15,6 +15,8 @@ export default function PostPropertyForm({
   dynamicAreaUnitOptions,
   onSubmitClick,
   postMode = 'owner',
+  contactValidationErrors = {},
+  showContactValidation = false,
 }) {
   return (
     <div className={formContainerClass}>
@@ -25,7 +27,12 @@ export default function PostPropertyForm({
         updateField={updateField}
         dynamicAreaUnitOptions={dynamicAreaUnitOptions}
       />
-      <OtherServicesSection formState={formState} updateField={updateField} />
+      <OtherServicesSection
+        formState={formState}
+        updateField={updateField}
+        contactValidationErrors={contactValidationErrors}
+        showContactValidation={showContactValidation}
+      />
       <MediaDocumentsSection formState={formState} updateField={updateField} />
 
       <div className="flex justify-center sm:justify-end">

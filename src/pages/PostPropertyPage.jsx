@@ -3,14 +3,29 @@ import { Building, Phone } from 'lucide-react';
 import PropertyLeadModal from '@/components/modals/PropertyLeadModal';
 import PropertySuccessModal from '@/components/modals/PropertySuccessModal';
 import PostPropertyForm from '@/components/post-property/PostPropertyForm';
-import PostModeToggle from '@/components/post-property/PostModeToggle';
+import ThemedSearchableDropdown, {
+  VILLAGE_DROPDOWN_TRIGGER_CLASS,
+} from '@/components/shared/ThemedSearchableDropdown';
 import { formHelpLinkClass, formPageClass } from '@/components/post-property/formStyles';
+import {
+  getPostModeFromRegistrationType,
+  registrationTypeOptions,
+} from '@/lib/registration/registrationTypeOptions';
 import { usePostPropertyForm } from '@/lib/post-property/usePostPropertyForm';
 import { usePropertySubmissionFlow } from '@/lib/post-property/usePropertySubmissionFlow';
+import { validatePropertyContactNumbers } from '@/lib/post-property/validatePropertyContacts';
 
 export function PostPropertyPage() {
+  const [registrationType, setRegistrationType] = useState('');
   const [postMode, setPostMode] = useState('owner');
+  const [contactValidationErrors, setContactValidationErrors] = useState({});
+  const [showContactValidation, setShowContactValidation] = useState(false);
   const { formState, updateField, getFormState, dynamicAreaUnitOptions } = usePostPropertyForm();
+
+  function handleRegistrationTypeChange(value) {
+    setRegistrationType(value);
+    setPostMode(getPostModeFromRegistrationType(value));
+  }
 
   const {
     isLeadModalOpen,
@@ -21,6 +36,24 @@ export function PostPropertyPage() {
     closeSuccessModal,
     handleLeadSubmit,
   } = usePropertySubmissionFlow(getFormState);
+
+  function handleSubmitClick() {
+    const validation = validatePropertyContactNumbers(getFormState().propertyContactNumbers);
+
+    if (!validation.isValid) {
+      setContactValidationErrors(validation.errors);
+      setShowContactValidation(true);
+      document.getElementById('property-contact-numbers')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+      return;
+    }
+
+    setContactValidationErrors({});
+    setShowContactValidation(false);
+    openLeadModal();
+  }
 
   return (
     <>
@@ -35,7 +68,18 @@ export function PostPropertyPage() {
                 List your property across Visakhapatnam GVMC &amp; VMRDA area
               </p>
             </div>
-            <PostModeToggle value={postMode} onChange={setPostMode} />
+            <ThemedSearchableDropdown
+              id="post-property-registration-type"
+              ariaLabel="Registration Type"
+              hideLabel
+              value={registrationType}
+              onValueChange={handleRegistrationTypeChange}
+              options={registrationTypeOptions}
+              placeholder="Select Registration Type"
+              searchPlaceholder="Search registration type..."
+              triggerClassName={VILLAGE_DROPDOWN_TRIGGER_CLASS}
+              className="w-full sm:max-w-xs"
+            />
           </div>
         </div>
       </div>
@@ -57,8 +101,10 @@ export function PostPropertyPage() {
           formState={formState}
           updateField={updateField}
           dynamicAreaUnitOptions={dynamicAreaUnitOptions}
-          onSubmitClick={openLeadModal}
+          onSubmitClick={handleSubmitClick}
           postMode={postMode}
+          contactValidationErrors={contactValidationErrors}
+          showContactValidation={showContactValidation}
         />
       </section>
 

@@ -6,7 +6,8 @@ export default function ApprovalField({
   value,
   onValueChange,
   label = 'Approval Authority',
-  placeholder = 'Select Approval Type',
+  hideLabel = false,
+  placeholder = 'Select Approved By',
   options = approvalOptions,
   className,
   allowAll = false,
@@ -15,6 +16,7 @@ export default function ApprovalField({
   return (
     <FilterSelectField
       label={label}
+      hideLabel={hideLabel}
       placeholder={allowAll ? allLabel : placeholder}
       value={value}
       onValueChange={onValueChange}

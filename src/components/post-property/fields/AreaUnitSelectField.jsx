@@ -6,7 +6,8 @@ export default function AreaUnitSelectField({
   value,
   onValueChange,
   options = areaUnitOptions,
-  placeholder = 'Select Unit',
+  placeholder = 'Select Area Unit',
+  hideLabel = false,
   className,
   allowAll = false,
   allLabel = 'All Units',
@@ -16,6 +17,7 @@ export default function AreaUnitSelectField({
   return (
     <PropertyTypeSelectField
       label="Area Unit"
+      hideLabel={hideLabel}
       placeholder={placeholder}
       value={allowAll ? toEmptySelectValue(value) : value || ''}
       onValueChange={(next) =>

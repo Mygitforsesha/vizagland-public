@@ -20,7 +20,10 @@ export { submitProperty } from './submitProperty';
 export {
   validateCustomerDetails,
   validateEmail,
+  validatePassword,
   validatePhoneNumber,
+  validatePropertyAuthDetails,
+  validateUsernameOrMobile,
 } from './validateLead';
 export { usePostPropertyForm } from './usePostPropertyForm';
 export { usePropertySubmissionFlow } from './usePropertySubmissionFlow';

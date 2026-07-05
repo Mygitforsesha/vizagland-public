@@ -32,33 +32,28 @@ export const nearbyLocationOptions = toSelectOptions([
 
 export const priceRangeOptions = toSelectOptions([
   'Below 5 Lakhs',
-  '6 - 10 Lakhs',
-  '11 - 15 Lakhs',
-  '16 - 20 Lakhs',
-  '21 - 25 Lakhs',
-  '26 - 30 Lakhs',
-  '31 - 35 Lakhs',
-  '36 - 40 Lakhs',
-  '41 - 45 Lakhs',
-  '46 - 50 Lakhs',
-  '51 - 55 Lakhs',
-  '56 - 60 Lakhs',
-  '61 - 65 Lakhs',
-  '66 - 70 Lakhs',
-  '71 - 75 Lakhs',
-  '76 - 80 Lakhs',
-  '81 - 85 Lakhs',
-  '86 - 90 Lakhs',
-  '91 - 95 Lakhs',
-  '96 Lakhs - 1 Crore',
+  '5 - 10 Lakhs',
+  '10 - 15 Lakhs',
+  '15 - 20 Lakhs',
+  '20 - 25 Lakhs',
+  '25 - 30 Lakhs',
+  '30 - 35 Lakhs',
+  '35 - 40 Lakhs',
+  '40 - 45 Lakhs',
+  '45 - 50 Lakhs',
+  '50 - 60 Lakhs',
+  '60 - 70 Lakhs',
+  '70 - 80 Lakhs',
+  '80 - 90 Lakhs',
+  '90 Lakhs - 1 Crore',
   '1 - 1.5 Crore',
   '1.5 - 2 Crore',
-  '2 - 2.5 Crore',
-  '2.5 - 3 Crore',
-  '3 - 3.5 Crore',
-  '3.5 - 4 Crore',
-  '4 - 4.5 Crore',
-  '4.5 - 5 Crore & above',
+  '2 - 3 Crore',
+  '3 - 5 Crore',
+  '5 - 10 Crore',
+  '10 - 20 Crore',
+  '20 - 50 Crore',
+  '50 Crore+',
 ]);
 
 export const areaUnitOptions = toSelectOptions([
@@ -79,12 +74,51 @@ export const pricePerSqftOptions = toSelectOptions([
   '5000+',
 ]);
 
-export const propertyAgeOptions = toSelectOptions([
-  'New',
-  '1-5 Years',
-  '5-10 Years',
-  '10+ Years',
-]);
+function formatOrdinalFloor(floor) {
+  const suffix =
+    floor % 10 === 1 && floor % 100 !== 11
+      ? 'st'
+      : floor % 10 === 2 && floor % 100 !== 12
+        ? 'nd'
+        : floor % 10 === 3 && floor % 100 !== 13
+          ? 'rd'
+          : 'th';
+
+  return `${floor}${suffix} Floor`;
+}
+
+function buildFloorNumberOptions() {
+  const options = [{ label: 'Ground Floor', value: 'Ground Floor' }];
+
+  for (let floor = 1; floor <= 50; floor += 1) {
+    const label = formatOrdinalFloor(floor);
+    options.push({ label, value: label });
+  }
+
+  options.push({ label: '50+ Floors', value: '50+ Floors' });
+  return options;
+}
+
+function buildPropertyAgeOptions() {
+  const options = [
+    { label: 'New / Under Construction', value: 'New / Under Construction' },
+    { label: '1 Year', value: '1 Year' },
+  ];
+
+  for (let year = 2; year <= 50; year += 1) {
+    const label = `${year} Years`;
+    options.push({ label, value: label });
+  }
+
+  options.push({ label: '50+ Years', value: '50+ Years' });
+  return options;
+}
+
+function buildBedRoomsOptions() {
+  return [...toNumericSelectOptions(10), { label: '10+', value: '10+' }];
+}
+
+export const propertyAgeOptions = buildPropertyAgeOptions();
 
 export const facingOptions = toSelectOptions([
   'East',
@@ -99,13 +133,7 @@ export const facingOptions = toSelectOptions([
 
 export const totalFloorsOptions = toNumericSelectOptions(50);
 
-export const floorNumberOptions = toSelectOptions([
-  'Ground Floor',
-  '1st Floor',
-  '2nd Floor',
-  '3rd Floor',
-  '4+',
-]);
+export const floorNumberOptions = buildFloorNumberOptions();
 
 export const furnishingOptions = toSelectOptions([
   'Furnished',
@@ -125,7 +153,7 @@ export const amenityOptions = toSelectOptions([
 
 export const propertyUnderOptions = toSelectOptions(['Government', 'Private']);
 
-export const bedRoomsOptions = toSelectOptions(['1', '2', '3']);
+export const bedRoomsOptions = buildBedRoomsOptions();
 
 export const bathroomsOptions = toNumericSelectOptions(5);
 
@@ -143,7 +171,9 @@ export const yearOptions = Array.from({ length: 101 }, (_, index) => {
 
 export const residentialTypeOptions = [
   { label: 'Flats', value: 'Flats', units: ['SFT'] },
-  { label: 'Plot', value: 'Plot', units: ['Sq.Yards'] },
+  { label: 'Plot', value: 'Plot', units: ['Sq.Yards'], categoryLabel: 'Plots' },
+
+  { label: 'Projects Bulk Plot', value: 'Projects Bulk Plot', units: ['Sq.Yards'], categoryLabel: 'Projects Bulk Plots' },
   { label: 'House', value: 'House', units: ['Sq.Yards'] },
   { label: 'Builder Floor Apartment', value: 'Builder Floor Apartment', units: ['SFT'] },
   { label: 'Villas', value: 'Villas', units: ['Sq.Yards', 'SFT'], displayUnits: ['Sq.Yards', 'SFT'] },
@@ -206,6 +236,7 @@ export const developmentTypeOptions = [
     value: 'Gated Community',
     units: ['Acres', 'Cents'],
     displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+    categoryLabel: 'Gated Community Flats',
   },
   {
     label: 'Township',
@@ -217,12 +248,13 @@ export const developmentTypeOptions = [
 
 export const layoutTypeOptions = [
   { label: 'Approved Layout', value: 'Approved Layout', units: ['Acres', 'Cents'] },
-  { label: 'Venture', value: 'Venture', units: ['Acres', 'Cents'] },
+  { label: 'Venture', value: 'Venture', units: ['Acres', 'Cents'], categoryLabel: 'For Venture Development' },
   {
     label: 'Farm Plots',
     value: 'Farm Plots',
     units: ['Acres', 'Cents'],
     displayUnits: ['SFT', 'Sq.Yards', 'Cents', 'Acres'],
+    categoryLabel: 'Firm Development Plots',
   },
 ];
 
@@ -259,6 +291,7 @@ const PROPERTY_CATEGORY_SOURCES = [
 const PROPERTY_CATEGORY_DISPLAY_ORDER = [
   'Flats',
   'Plot',
+  'Projects Bulk Plot',
   'House',
   'Builder Floor Apartment',
   'Villas',
@@ -298,12 +331,13 @@ const EMPTY_PROPERTY_GROUP_AND_TYPES = {
 
 function formatPropertyCategoryDisplayLabel(option) {
   const displayUnits = option.displayUnits ?? option.units;
+  const baseLabel = option.categoryLabel ?? option.value;
 
   if (!displayUnits?.length) {
-    return option.value;
+    return baseLabel;
   }
 
-  return `${option.value} (${displayUnits.join(' / ')})`;
+  return `${baseLabel} (${displayUnits.join(' / ')})`;
 }
 
 function buildPropertyCategoryRegistry() {

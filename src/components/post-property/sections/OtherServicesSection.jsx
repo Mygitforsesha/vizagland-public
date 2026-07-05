@@ -1,33 +1,37 @@
 import FormSection from '@/components/post-property/FormSection';
 import FormTextField from '@/components/post-property/FormTextField';
-import PropertyTypeSelectField from '@/components/post-property/PropertyTypeSelectField';
+import PropertyContactNumbersSection from '@/components/post-property/sections/PropertyContactNumbersSection';
 import { formGridClass } from '@/components/post-property/formStyles';
-import { otherServiceOptions } from '@/lib/post-property/formOptions';
 
-export default function OtherServicesSection({ formState, updateField }) {
+export default function OtherServicesSection({
+  formState,
+  updateField,
+  contactValidationErrors = {},
+  showContactValidation = false,
+}) {
   return (
-    <FormSection title="Other Services">
+    <FormSection>
       <div className={formGridClass}>
-        <PropertyTypeSelectField
-          label="Other Services"
-          placeholder="Select Service"
-          value={formState.selectedOtherService}
-          onValueChange={(value) => updateField('selectedOtherService', value)}
-          options={otherServiceOptions}
-        />
         <FormTextField
-          label="YouTube Video Link"
+          hideLabel
           value={formState.youtubeVideoLink}
           onChange={(event) => updateField('youtubeVideoLink', event.target.value)}
-          placeholder="https://www.youtube.com/watch?v=..."
+          placeholder="Paste YouTube Video Link"
         />
         <FormTextField
-          label="Property Location"
+          hideLabel
           value={formState.propertyLocationLink}
           onChange={(event) => updateField('propertyLocationLink', event.target.value)}
-          placeholder="Paste Google Maps Link"
+          placeholder="Paste Property Location Link"
         />
       </div>
+
+      <PropertyContactNumbersSection
+        contacts={formState.propertyContactNumbers}
+        updateField={updateField}
+        validationErrors={contactValidationErrors}
+        showValidation={showContactValidation}
+      />
     </FormSection>
   );
 }
