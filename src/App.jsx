@@ -8,6 +8,10 @@ import { RegisterPage } from './pages/RegisterPage';
 import { PostPropertyPage } from './pages/PostPropertyPage';
 import { PropertyDetailsPage } from './pages/PropertyDetailsPage';
 import { PropertySearchPage } from './pages/PropertySearchPage';
+import {
+  AdvertisementDetailsPage,
+  AdvertisementListingPage,
+} from './pages/AdvertisementListingPage';
 
 function App() {
   return (
@@ -23,6 +27,8 @@ function App() {
         <Route path="/property/:id" element={<Layout><PropertyDetailsPage /></Layout>} />
         <Route path="/contact" element={<Layout><ContactPage /></Layout>} />
         <Route path="/post-property" element={<Layout><PostPropertyPage /></Layout>} />
+        <Route path="/ads/:category" element={<Layout><AdvertisementListingPage /></Layout>} />
+        <Route path="/ads/:category/:adId" element={<Layout><AdvertisementDetailsPage /></Layout>} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,5 +1,4 @@
-import { HeroSection } from '@/components/home/HeroSection';
-import { LatestUpdatesSection } from '@/components/home/LatestUpdatesSection';
+import { AdvertisementSection } from '@/components/home/AdvertisementSection';
 import BrowseByAreaSection from '@/components/home/browse-area/BrowseByAreaSection';
 
 export function HomePage() {
@@ -9,16 +8,7 @@ export function HomePage() {
         <BrowseByAreaSection />
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 pb-12">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[7fr_3fr] lg:items-stretch lg:gap-6">
-          <div className="min-h-0 lg:flex lg:flex-col">
-            <HeroSection />
-          </div>
-          <div className="min-h-0 lg:flex lg:flex-col">
-            <LatestUpdatesSection fillHeight />
-          </div>
-        </div>
-      </div>
+      <AdvertisementSection />
     </>
   );
 }
